@@ -7,7 +7,7 @@ const cors = require('cors');
 
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
-const projectRouter = require('./routes/project');  // Ensure project route is loaded
+const projectRouter = require('./routes/project');  // Ensure the correct route is used
 
 const app = express();
 
@@ -26,7 +26,7 @@ app.use(cors());
 // Routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/projects', projectRouter);  // Mount the projects routes here
+app.use('/projects', projectRouter);  // Ensure the project route is loaded
 
 // Catch 404 and forward to error handler
 app.use(function(req, res, next) {
