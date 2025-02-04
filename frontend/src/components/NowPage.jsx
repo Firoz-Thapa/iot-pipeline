@@ -57,7 +57,7 @@ const NowPage = () => {
       </div>
 
       {/* Footer Section */}
-      <p className="text-center mt-6 text-sm opacity-80">Powered By GymPlus</p>
+      <p className="text-center mt-6 text-sm opacity-80">Powered By IoT</p>
       <div className="text-center my-6">
         <p className="text-lg mb-2">How well does the gym equipment support your training?</p>
         <div className="flex justify-center mt-2 space-x-2">

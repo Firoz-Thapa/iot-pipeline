@@ -60,7 +60,7 @@ const WeekPage = () => {
         <h2 className="text-2xl font-bold text-blue-600 mb-4 text-center">
           Weekly Usage
         </h2>
-        <p className="text-center text-gray-500 mb-6">Powered By GymPlus</p>
+        <p className="text-center text-gray-500 mb-6">Powered By IoT</p>
         <div className="chart-container">
           <Bar data={data} options={options} />
         </div>

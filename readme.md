@@ -15,7 +15,7 @@ This project aims to build an *AI-powered gym occupancy monitoring system* that 
    - For larger scale deployments, additional cameras can be installed in various gym zones (e.g., entrance, aerobic zone, functional area).
    
 2. *Configure the Edge Device*:
-   - Use an *NVIDIA Jetson Nano* or *Raspberry Pi* to connect the camera and handle edge processing.
+   - Use an or *Raspberry Pi* to connect the camera and handle edge processing.
    - Set up the device to process the video input locally, reducing latency and dependency on the cloud.
 
 ---
@@ -46,7 +46,7 @@ This project aims to build an *AI-powered gym occupancy monitoring system* that 
 ### Step 4: Build the Backend
 
 1. *Create a Backend System*:
-   - Set up a *Node.js* or *Flask* server to handle API requests from the edge device and serve the data to the dashboard.
+   - Set up a *Node.js* server to handle API requests from the edge device and serve the data to the dashboard.
    - Use *MongoDB* or any relational database to store real-time occupancy and historical activity data.
 
 2. *Integrate with Cloud Services*:
