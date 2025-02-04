@@ -4,6 +4,9 @@
 
 This project aims to build an *AI-powered gym occupancy monitoring system* that tracks the number of people in various gym zones in real-time using cameras, edge devices, and AI models. The system will use *object detection* to count people, recognize activities, and display this data on a *web dashboard*. Alerts for overcrowding and zone usage insights will help optimize gym operations and improve member experience.
 
+## System Architecture
+![WhatsApp Image 2025-02-04 at 13 40 40_cad48b38](https://github.com/user-attachments/assets/8cc97d6d-4981-45b4-b0ab-baeaba7f17b7)
+
 ---
 
 ## Project Steps
