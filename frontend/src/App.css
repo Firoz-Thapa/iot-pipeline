@@ -1,9 +1,9 @@
-*{
+* {
   margin: 0;
   padding: 0;
 }
 
-body{
+body {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -11,10 +11,12 @@ body{
   color: #fff;
   overflow-x: hidden;
 }
-html{
+
+html {
   overflow-x: hidden;
 }
-.inputBox{
+
+.inputBox {
   width: 100%;
   background-color: #141414;
   border-radius: 5px;
@@ -23,7 +25,7 @@ html{
   margin-bottom: 15px;
 }
 
-.inputBox input{
+.inputBox input {
   flex: 1;
   padding: 10px;
   border: none;
@@ -33,7 +35,7 @@ html{
   font-size: 16px;
 }
 
-.btnBlue{
+.btnBlue {
   background-color: #00AEEF;
   color: #fff;
   padding: 10px 20px;
@@ -43,34 +45,72 @@ html{
   cursor: pointer;
   font-size: 16px;
 }
-.btnBlue:hover{
+
+.btnBlue:hover {
   background-color: #0086b3;
 }
-.grid{
+
+.grid {
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 10px;
 }
 
-.lightMode{
+/* Light Mode Styles */
+.lightMode {
   background-color: #fff !important;
   color: #000 !important;
-};
+}
 
-
-.lightMode .navbar{
+.lightMode .navbar {
   background-color: #fff;
+  color: #000; /* Ensure navbar text is visible in light mode */
 }
 
-.lightMode .tabs{
+.lightMode .tabs {
   background-color: #f7f7f7;
+  color: #000; /* Ensure tabs text is visible in light mode */
 }
-.lightMode .tabs .tab{
+
+.lightMode .tabs .tab {
   background-color: #c2c1c1;
   color: #000;
 }
 
-.lightMode .btn{
+.lightMode .btn {
   background-color: #C2C1C1;
   color: #000;
+}
+
+body.light-mode {
+  background-color: #f9f9f9;
+  color: #000;
+}
+
+body.light-mode .inputBox {
+  background-color: #f1f1f1; 
+}
+
+body.light-mode .inputBox input {
+  color: #000; 
+}
+
+body.light-mode .btnBlue {
+  background-color: #0077cc; 
+  color: #fff; 
+}
+
+body.light-mode .btnBlue:hover {
+  background-color: #005fa3;
+}
+
+/* Dropdown Menu Styling */
+body.light-mode .dropDownNavbar {
+  background-color: #e5e5e5;
+  color: #000;
+}
+
+body.dark-mode .dropDownNavbar {
+  background-color: #1A1919;
+  color: #fff;
 }
