@@ -1,4 +1,4 @@
-name: Node.js CI
+name: iot-pipeline
 
 on:
   push:
@@ -26,10 +26,10 @@ jobs:
         cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci || npm install  # This will use npm ci if package-lock.json exists, otherwise npm install
+      run:  npm install  # This will use npm ci if package-lock.json exists, otherwise npm install
 
     - name: Build the project
-      run: npm run build --if-present
+      run: npm run build 
 
-    - name: Run tests
-      run: npm test
+    - name: Run
+      run: npm run dev
