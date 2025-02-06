@@ -139,3 +139,37 @@ This project aims to build an *AI-powered gym occupancy monitoring system* that 
 This project proposes a scalable and real-time gym occupancy monitoring system using *IoT and AI* technologies. By utilizing *object detection, **AI models, and **real-time dashboards, gym managers can monitor occupancy, improve resource allocation, and provide a better experience for gym members. With **alert systems* for overcrowding and *historical data analysis*, the system will help optimize gym operations and ensure safety and efficiency.
 
 ---
+
+
+## Our Team
+
+### 1. **Damindu Koswattage**  
+**Role**: Project Manager  
+**Responsibilities**:  
+- Responsible for overall project coordination and progress management.  
+- Scheduling meeting agendas.  
+- Supervising task completion.  
+
+### 2. **Firoz Thapa**  
+**Role**: Technical Lead  
+**Responsibilities**:  
+- Focuses on the implementation of the IoT pipeline.  
+- Resolving technical issues, including hardware and software integration.  
+- Debugging.  
+
+### 3. **Yumeng Tai**  
+**Role**: Documentation and Repository Manager  
+**Responsibilities**:  
+- Responsible for creating, updating, and organizing all documents.  
+- Ensuring clarity and accessibility of project repositories (e.g., Google Docs and GitHub).  
+
+### 4. **Kavindi Gamaralalage**  
+**Role**: Communication and Coordination Officer  
+**Responsibilities**:  
+- Manages internal and external communications.  
+- Recording meeting minutes.  
+- Sending notifications.  
+- Liaising with instructors or other teams.  
+
+###
+
