@@ -4,6 +4,9 @@
 
 This project aims to develop an AI-powered gym occupancy monitoring system that tracks the number of people in various gym zones in real-time using HC-SR501 PIR sensors, edge devices, and AI models. The system will detect occupancy, recognize activities, and display data on a web dashboard. It also includes alerts for overcrowding and zone usage insights to optimize gym operations and enhance the member experience.
 
+## System Architecture
+![WhatsApp Image 2025-02-04 at 13 40 40_cad48b38](https://github.com/user-attachments/assets/8cc97d6d-4981-45b4-b0ab-baeaba7f17b7)
+
 ---
 
 ## System Architecture
@@ -127,3 +130,37 @@ This project aims to develop an AI-powered gym occupancy monitoring system that 
 This project proposes a scalable and real-time gym occupancy monitoring system using *IoT and AI* technologies. By utilizing *object detection, **AI models, and **real-time dashboards, gym managers can monitor occupancy, improve resource allocation, and provide a better experience for gym members. With **alert systems* for overcrowding and *historical data analysis*, the system will help optimize gym operations and ensure safety and efficiency.
 
 ---
+
+
+## Our Team
+
+### 1. **Damindu Koswattage**  
+**Role**: Project Manager  
+**Responsibilities**:  
+- Responsible for overall project coordination and progress management.  
+- Scheduling meeting agendas.  
+- Supervising task completion.  
+
+### 2. **Firoz Thapa**  
+**Role**: Technical Lead  
+**Responsibilities**:  
+- Focuses on the implementation of the IoT pipeline.  
+- Resolving technical issues, including hardware and software integration.  
+- Debugging.  
+
+### 3. **Yumeng Tai**  
+**Role**: Documentation and Repository Manager  
+**Responsibilities**:  
+- Responsible for creating, updating, and organizing all documents.  
+- Ensuring clarity and accessibility of project repositories (e.g., Google Docs and GitHub).  
+
+### 4. **Kavindi Gamaralalage**  
+**Role**: Communication and Coordination Officer  
+**Responsibilities**:  
+- Manages internal and external communications.  
+- Recording meeting minutes.  
+- Sending notifications.  
+- Liaising with instructors or other teams.  
+
+###
+
