@@ -1,4 +1,5 @@
 import { useState } from "react";
+import axios from "axios";
 
 const PTBetaPage = () => {
   const [loading, setLoading] = useState(false);
@@ -9,6 +10,10 @@ const PTBetaPage = () => {
     frequency: "",
   });
 
+  // Retrieve API Key from .env file
+  const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+  // Handle checkbox selections for training goals
   const handleCheckboxChange = (e) => {
     const { value, checked } = e.target;
     setFormData((prev) => ({
@@ -19,6 +24,7 @@ const PTBetaPage = () => {
     }));
   };
 
+  // Handle radio button selections for level and frequency
   const handleRadioChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -27,66 +33,53 @@ const PTBetaPage = () => {
     }));
   };
 
-  const handleSubmit = () => {
+  // Generate AI-powered workout plan
+  const handleSubmit = async () => {
+    if (!API_KEY) {
+      alert("Missing API Key! Ensure it's set in your .env file.");
+      return;
+    }
+
+    if (formData.goals.length === 0 || !formData.level || !formData.frequency) {
+      alert("Please complete all fields before generating your workout plan.");
+      return;
+    }
+
     setLoading(true);
+    try {
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`,
+        {
+          contents: [
+            {
+              role: "user",
+              parts: [
+                {
+                  text: `Create a personalized workout plan based on:
+                  - Goals: ${formData.goals.join(", ")}
+                  - Fitness Level: ${formData.level}
+                  - Frequency: ${formData.frequency} per week
+                  Provide structured exercises, duration, and warm-up/cool-down tips.`
+                }
+              ]
+            }
+          ]
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
-    setTimeout(() => {
-      // Generate workout plan dynamically
-      const generatedPlan = generateWorkoutPlan(formData);
-      setResult(generatedPlan);
-      setLoading(false);
-    }, 2000); // Simulate server delay
-  };
+      console.log("API Response:", response.data);
 
-  const generateWorkoutPlan = ({ goals, level, frequency }) => {
-    // Define generic exercises
-    const exercises = {
-      cardio: "Treadmill: 10 minutes",
-      strength: [
-        "Leg press: 3 sets x 12 reps",
-        "Chest press: 3 sets x 12 reps",
-        "Dumbbell bicep curl: 3 sets x 15 reps",
-      ],
-      flexibility: "Dynamic stretches: 5 minutes",
-      warmup: "Exercise bike: 5 minutes",
-    };
-
-    // Define intensity based on level
-    const intensity = {
-      Beginner: "Low intensity",
-      "Medium level": "Moderate intensity",
-      Advanced: "High intensity",
-    };
-
-    // Adjust frequency (days per week)
-    const daysPerWeek = parseInt(frequency.split(" ")[0]);
-
-    // Create workout plan
-    const program = {
-      title: "YOUR TRAINING PROGRAM",
-      description: `This program is tailored for your goals: ${goals.join(
-        ", "
-      )}. It focuses on ${intensity[level]} training with ${daysPerWeek} sessions per week.`,
-      days: Array.from({ length: daysPerWeek }, (_, i) => ({
-        title: `Day ${i + 1}`,
-        activities: [
-          { type: "Warm-up and mobility", details: exercises.warmup },
-          { type: "Cardio", details: exercises.cardio },
-          ...exercises.strength.map((exercise) => ({
-            type: "Strength training",
-            details: exercise,
-          })),
-          { type: "Flexibility training", details: exercises.flexibility },
-        ],
-      })),
-    };
-
-    return program;
-  };
-
-  const handleDownload = () => {
-    alert("Downloading your training program as a PDF...");
-    // Placeholder for real PDF generation logic
+      // Extract the AI-generated text safely
+      const aiResponse = response.data?.candidates?.[0]?.content?.parts?.[0]?.text || "AI response unavailable.";
+      setResult(aiResponse);
+    } catch (error) {
+      console.error("Error fetching AI-generated workout plan:", error);
+      alert("Failed to fetch the workout plan. Please try again.");
+    }
+    setLoading(false);
   };
 
   return (
@@ -94,7 +87,7 @@ const PTBetaPage = () => {
       <div className="bg-white text-gray-900 rounded-lg shadow-lg p-6 max-w-lg w-full">
         {!result ? (
           <>
-            <h2 className="text-xl font-bold mb-4">Let Artificial Intelligence Create a Workout Program for You!</h2>
+            <h2 className="text-xl font-bold mb-4">Let AI Create Your Workout Plan!</h2>
             <div className="mb-4">
               <p className="font-semibold">What are your goals for gym training?</p>
               <div className="mt-2 space-y-2">
@@ -104,6 +97,7 @@ const PTBetaPage = () => {
                       type="checkbox"
                       value={goal}
                       onChange={handleCheckboxChange}
+                      checked={formData.goals.includes(goal)}
                       className="mr-2"
                     />
                     {goal}
@@ -111,6 +105,7 @@ const PTBetaPage = () => {
                 ))}
               </div>
             </div>
+
             <div className="mb-4">
               <p className="font-semibold">Your current level?</p>
               <div className="mt-2 space-y-2">
@@ -121,6 +116,7 @@ const PTBetaPage = () => {
                       name="level"
                       value={level}
                       onChange={handleRadioChange}
+                      checked={formData.level === level}
                       className="mr-2"
                     />
                     {level}
@@ -128,6 +124,7 @@ const PTBetaPage = () => {
                 ))}
               </div>
             </div>
+
             <div className="mb-4">
               <p className="font-semibold">How often do you go to the gym a week?</p>
               <div className="mt-2 space-y-2">
@@ -138,6 +135,7 @@ const PTBetaPage = () => {
                       name="frequency"
                       value={freq}
                       onChange={handleRadioChange}
+                      checked={formData.frequency === freq}
                       className="mr-2"
                     />
                     {freq}
@@ -145,39 +143,24 @@ const PTBetaPage = () => {
                 ))}
               </div>
             </div>
+
             <button
               onClick={handleSubmit}
               className="w-full bg-blue-600 text-white font-semibold py-2 rounded hover:bg-blue-700 transition"
+              disabled={loading}
             >
-              Create My Program
+              {loading ? "Generating..." : "Create My Program"}
             </button>
           </>
-        ) : loading ? (
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-opacity-50 mb-4"></div>
-            <p>Understanding your goals...</p>
-          </div>
         ) : (
           <div>
-            <h2 className="text-xl font-bold mb-4">{result.title}</h2>
-            <p className="mb-4">{result.description}</p>
-            {result.days.map((day, index) => (
-              <div key={index} className="mb-4">
-                <h3 className="font-semibold">{day.title}</h3>
-                <ul className="list-disc ml-5 mt-2">
-                  {day.activities.map((activity, idx) => (
-                    <li key={idx}>
-                      <strong>{activity.type}:</strong> {activity.details}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+            <h2 className="text-xl font-bold mb-4">Your Personalized AI Workout Plan</h2>
+            <p className="mb-4 whitespace-pre-line">{result}</p>
             <button
-              onClick={handleDownload}
-              className="w-full bg-green-600 text-white font-semibold py-2 rounded hover:bg-green-700 transition mb-4"
+              onClick={() => setResult(null)}
+              className="w-full bg-gray-600 text-white font-semibold py-2 rounded hover:bg-gray-700 transition"
             >
-              Download PDF
+              Generate Again
             </button>
           </div>
         )}
