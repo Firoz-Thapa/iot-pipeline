@@ -128,6 +128,13 @@ This project aims to develop an AI-powered gym occupancy monitoring system that 
 
 ---
 
+## Link to the Presentation
+
+[View the presentation](./Gym Occupancy Monitoring System with AI and IoT_Group G.pdf)
+
+
+---
+
 ## Conclusion
 
 This project proposes a scalable and real-time gym occupancy monitoring system using *IoT and AI* technologies. By utilizing *object detection, **AI models, and **real-time dashboards, gym managers can monitor occupancy, improve resource allocation, and provide a better experience for gym members. With **alert systems* for overcrowding and *historical data analysis*, the system will help optimize gym operations and ensure safety and efficiency.
