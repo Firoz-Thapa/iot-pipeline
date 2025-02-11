@@ -128,7 +128,7 @@ This project aims to develop an AI-powered gym occupancy monitoring system that 
 ## Link to the Presentation
 
 [View the presentation](./Gym%20Occupancy%20Monitoring%20System%20with%20AI%20and%20IoT_Group%20G.pdf)
-
+[View the video presentation](https://youtu.be/yDCnUDdUOn4)
 
 ---
 
