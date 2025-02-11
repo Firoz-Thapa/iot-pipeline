@@ -4,9 +4,6 @@
 
 This project aims to develop an AI-powered gym occupancy monitoring system that tracks the number of people in various gym zones in real-time using HC-SR501 PIR sensors, edge devices, and AI models. The system will detect occupancy, recognize activities, and display data on a web dashboard. It also includes alerts for overcrowding and zone usage insights to optimize gym operations and enhance the member experience.
 
-## System Architecture
-![WhatsApp Image 2025-02-04 at 13 40 40_cad48b38](https://github.com/user-attachments/assets/8cc97d6d-4981-45b4-b0ab-baeaba7f17b7)
-
 ---
 
 ## System Architecture
