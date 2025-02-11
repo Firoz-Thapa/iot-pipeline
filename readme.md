@@ -21,6 +21,9 @@ This project aims to develop an AI-powered gym occupancy monitoring system that 
 - Backend – Developed using Node.js and Express.js for handling API requests.
 - Database – InfluxDB for storing real-time occupancy data.
 - IoT Communication – MQTT / WebSockets for real-time updates.
+
+---
+
 ## Project Steps
 
 ### Step 1: Setup the PIR Sensor and Edge Device
@@ -131,36 +134,4 @@ This project proposes a scalable and real-time gym occupancy monitoring system u
 
 ---
 
-
-## Our Team
-
-### 1. **Damindu Koswattage**  
-**Role**: Project Manager  
-**Responsibilities**:  
-- Responsible for overall project coordination and progress management.  
-- Scheduling meeting agendas.  
-- Supervising task completion.  
-
-### 2. **Firoz Thapa**  
-**Role**: Technical Lead  
-**Responsibilities**:  
-- Focuses on the implementation of the IoT pipeline.  
-- Resolving technical issues, including hardware and software integration.  
-- Debugging.  
-
-### 3. **Yumeng Tai**  
-**Role**: Documentation and Repository Manager  
-**Responsibilities**:  
-- Responsible for creating, updating, and organizing all documents.  
-- Ensuring clarity and accessibility of project repositories (e.g., Google Docs and GitHub).  
-
-### 4. **Kavindi Gamaralalage**  
-**Role**: Communication and Coordination Officer  
-**Responsibilities**:  
-- Manages internal and external communications.  
-- Recording meeting minutes.  
-- Sending notifications.  
-- Liaising with instructors or other teams.  
-
-###
 
