@@ -10,7 +10,7 @@ This project aims to develop an AI-powered gym occupancy monitoring system that 
 
 ### Hardware
 - HC-SR501 PIR Sensors – Motion detection for occupancy tracking.
-- Raspberry Pi / ESP32 – Processing sensor data.
+- Raspberry Pi – Processing sensor data.
 - WiFi Module – Transmitting data to the cloud.
 
 ### Software 
@@ -57,7 +57,7 @@ This project aims to develop an AI-powered gym occupancy monitoring system that 
 
 ### Step 5: Deployment and Optimization
 
-   - Deploy backend services on AWS IoT Core / Microsodt Azure.
+   - Deploy backend services on Microsodt Azure.
    - Optimize sensor placement for accurate motion detection.
    - Implement AI-based analytics for activity insights.
 
