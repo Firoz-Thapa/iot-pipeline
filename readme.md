@@ -7,6 +7,7 @@ This project aims to develop an AI-powered gym occupancy monitoring system that 
 ---
 
 ## System Architecture
+![Gym IoT Application Architecture](https://github.com/user-attachments/assets/9608f711-e3ac-45db-acc3-27fe76322a91)
 
 ### Hardware
 - HC-SR501 PIR Sensors – Motion detection for occupancy tracking.
