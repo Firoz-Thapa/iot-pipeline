@@ -187,4 +187,4 @@ jobs:
           Commit: ${{ github.sha }}
           Deployed by: ${{ github.actor }}
         SLACK_FOOTER: "IoT Pipeline CI/CD"
-      if: ${{ secrets.SLACK_WEBHOOK != '' }}
+      if: github.secrets.SLACK_WEBHOOK != ''
