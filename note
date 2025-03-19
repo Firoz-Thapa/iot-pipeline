@@ -1,2 +1,0 @@
-cd .ssh/
-ssh -i ~/.ssh/Implement_key.pem azureuser@135.236.212.218
