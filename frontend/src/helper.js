@@ -1,4 +1,3 @@
-// Helper functions that can be used without React
 export const toggleClass = (el, className) => {
   let elem = document.querySelector(el);
   if (elem) {
@@ -14,4 +13,4 @@ export const removeClass = (el, className) => {
 };
 
 // Base URL for your API
-export const api_base_url = "http://localhost:3000";
+export const api_base_url = "http://localhost:5000";

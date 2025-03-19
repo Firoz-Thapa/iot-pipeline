@@ -1,148 +1,180 @@
-// import { useState } from "react";
-// import "./NowPage.css";
-
-// const NowPage = () => {
-//   const [selectedRating, setSelectedRating] = useState(0); // State for rating stars
-
-//   const handleRatingClick = (index) => {
-//     setSelectedRating(index + 1); // Update selected rating
-//   };
-
-//   const handleCardClick = (category) => {
-//     alert(`You clicked on ${category}`); // Show an alert for the clicked category
-//   };
-
-//   const handleForecastClick = () => {
-//     alert("Displaying forecast data..."); // Show a placeholder action for the forecast button
-//   };
-
-//   return (
-//     <div className="bg-gradient-to-b from-blue-600 to-blue-800 rounded-2xl shadow-xl p-6 text-white max-w-md mx-auto lg:max-w-xl">
-//       {/* Blinking Light with Text */}
-//       <div className="flex items-center space-x-2 mb-6">
-//         <div className="blinking-light"></div>
-//         <h2 className="text-2xl font-semibold tracking-wide">13 people in the gym</h2>
-//       </div>
-
-//       {/* Gym Stats */}
-//       <div className="grid grid-cols-2 gap-6 mt-4 text-center">
-//         <button
-//           className="bg-white bg-opacity-10 p-4 rounded-lg shadow-inner focus:outline-none hover:bg-opacity-20 transition"
-//           onClick={() => handleCardClick("Muscle Fitness")}
-//         >
-//           <p className="text-2xl font-bold">10 / 34</p>
-//           <p className="text-sm">Muscle Fitness</p>
-//         </button>
-//         <button
-//           className="bg-white bg-opacity-10 p-4 rounded-lg shadow-inner focus:outline-none hover:bg-opacity-20 transition"
-//           onClick={() => handleCardClick("Aerobic")}
-//         >
-//           <p className="text-2xl font-bold">1 / 9</p>
-//           <p className="text-sm">Aerobic</p>
-//         </button>
-//         <button
-//           className="bg-white bg-opacity-10 p-4 rounded-lg shadow-inner focus:outline-none hover:bg-opacity-20 transition"
-//           onClick={() => handleCardClick("Functional")}
-//         >
-//           <p className="text-2xl font-bold">0 / 2</p>
-//           <p className="text-sm">Functional</p>
-//         </button>
-//         <button
-//           className="bg-white bg-opacity-10 p-4 rounded-lg shadow-inner focus:outline-none hover:bg-opacity-20 transition"
-//           onClick={() => handleCardClick("Not On Devices")}
-//         >
-//           <p className="text-2xl font-bold">2</p>
-//           <p className="text-sm">Not On Devices</p>
-//         </button>
-//       </div>
-
-//       {/* Footer Section */}
-//       <p className="text-center mt-6 text-sm opacity-80">Powered By IoT</p>
-//       <div className="text-center my-6">
-//         <p className="text-lg mb-2">How well does the gym equipment support your training?</p>
-//         <div className="flex justify-center mt-2 space-x-2">
-//           {Array(5)
-//             .fill(0)
-//             .map((_, index) => (
-//               <button
-//                 key={index}
-//                 className={`w-8 h-8 rounded-full cursor-pointer ${
-//                   selectedRating > index
-//                     ? "bg-yellow-400"
-//                     : "bg-white bg-opacity-20"
-//                 } transition`}
-//                 onClick={() => handleRatingClick(index)}
-//               ></button>
-//             ))}
-//         </div>
-//       </div>
-//       <button
-//         className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold py-3 rounded-lg mt-4 shadow-md transition"
-//         onClick={handleForecastClick}
-//       >
-//         See the forecast for the next few hours
-//       </button>
-//     </div>
-//   );
-// };
-
-// export default NowPage;
-
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import "./NowPage.css";
 
 const NowPage = () => {
   const [selectedRating, setSelectedRating] = useState(0);
   const [showForecast, setShowForecast] = useState(false);
+  const [occupancyData, setOccupancyData] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [retryCount, setRetryCount] = useState(0);
 
+  // Categories for display
+  const categories = [
+    { label: "Muscle Fitness", current: 0, total: 34 },
+    { label: "Aerobic", current: 0, total: 9 },
+    { label: "Functional", current: 0, total: 2 },
+    { label: "Not On Devices", current: 0 }
+  ];
+
+  // Fetch occupancy data from backend
+  const fetchOccupancyData = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:5000/api/occupancy', {
+        timeout: 10000, // 10 second timeout
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Sort by timestamp to get the latest data
+        const sortedData = [...response.data].sort((a, b) => 
+          new Date(b.timestamp) - new Date(a.timestamp)
+        );
+        
+        setOccupancyData(sortedData[0]); // Get the most recent reading
+        setError(null);
+        setRetryCount(0);
+      } else {
+        throw new Error('Invalid data format received');
+      }
+    } catch (error) {
+      console.error('Error fetching occupancy data:', error);
+      setError(`Failed to connect to the server. Please try again later.`);
+      
+      // Increment retry count for exponential backoff
+      setRetryCount(prev => prev + 1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Retry with exponential backoff if there's an error
+  useEffect(() => {
+    if (error && retryCount > 0) {
+      const backoffTime = Math.min(2000 * Math.pow(2, retryCount - 1), 30000); // Max 30s
+      const timeoutId = setTimeout(fetchOccupancyData, backoffTime);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [error, retryCount]);
+
+  // Initial data fetch and polling setup
+  useEffect(() => {
+    fetchOccupancyData();
+    
+    // Set up polling interval - every 30 seconds
+    const intervalId = setInterval(fetchOccupancyData, 30000);
+    
+    // Clean up interval on component unmount
+    return () => clearInterval(intervalId);
+  }, []);
+
+  // Handle rating clicks
   const handleRatingClick = (index) => {
     setSelectedRating(index + 1);
   };
 
+  // Handle card clicks
   const handleCardClick = (category) => {
     alert(`You clicked on ${category}`);
   };
 
+  // Toggle forecast modal
   const handleForecastClick = () => {
-    setShowForecast(true); // Show the forecast modal
+    setShowForecast(true);
   };
 
   const handleCloseForecast = () => {
     setShowForecast(false);
   };
 
-  // Dummy Forecast Data
-  const forecastData = [
-    { time: "Now", people: 13 },
-    { time: "1 Hour +", people: 15 },
-    { time: "2 Hours +", people: 18 },
-    { time: "3 Hours +", people: 12 },
-    { time: "4 Hours +", people: 9 },
-  ];
+  // Forecast data based on current occupancy
+  const generateForecastData = () => {
+    const currentValue = occupancyData?.value || 13;
+    
+    return [
+      { time: "Now", people: currentValue },
+      { time: "1 Hour +", people: Math.max(5, Math.floor(currentValue * (1 + Math.random() * 0.3))) },
+      { time: "2 Hours +", people: Math.max(5, Math.floor(currentValue * (1 + Math.random() * 0.4))) },
+      { time: "3 Hours +", people: Math.max(5, Math.floor(currentValue * (0.8 + Math.random() * 0.3))) },
+      { time: "4 Hours +", people: Math.max(5, Math.floor(currentValue * (0.6 + Math.random() * 0.3))) },
+    ];
+  };
+
+  // Dynamic categories adjusted by occupancy data
+  const getAdjustedCategories = () => {
+    if (!occupancyData) return categories;
+    
+    const totalPeople = occupancyData.value || 13;
+    const adjustedCategories = [...categories];
+    
+    // Distribute people across categories using a weighted approach
+    let peoplePlaced = 0;
+    
+    // 60% in Muscle Fitness
+    adjustedCategories[0].current = Math.floor(totalPeople * 0.6);
+    peoplePlaced += adjustedCategories[0].current;
+    
+    // 20% in Aerobic
+    adjustedCategories[1].current = Math.floor(totalPeople * 0.2);
+    peoplePlaced += adjustedCategories[1].current;
+    
+    // 5% in Functional
+    adjustedCategories[2].current = Math.floor(totalPeople * 0.05);
+    peoplePlaced += adjustedCategories[2].current;
+    
+    // Remaining in Not On Devices
+    adjustedCategories[3].current = totalPeople - peoplePlaced;
+    
+    return adjustedCategories;
+  };
+
+  // Get adjusted categories with real data factored in
+  const adjustedCategories = getAdjustedCategories();
+  // Generate forecast data
+  const forecastData = generateForecastData();
 
   return (
     <div className="bg-gradient-to-b from-blue-700 to-blue-900 rounded-2xl shadow-2xl p-8 text-white max-w-lg mx-auto lg:max-w-2xl transition-all duration-300">
       {/* Blinking Light with Text */}
       <div className="flex items-center space-x-3 mb-6">
         <div className="blinking-light animate-pulse w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
-        <h2 className="text-3xl font-extrabold tracking-wide">🏋️ 13 people in the gym</h2>
+        <h2 className="text-3xl font-extrabold tracking-wide">
+          🏋️ {occupancyData ? occupancyData.value : '...'} people in the gym
+        </h2>
       </div>
+
+      {/* Loading or Error States */}
+      {loading && !occupancyData && (
+        <div className="text-center p-4 mb-4 bg-blue-600 bg-opacity-50 rounded-lg">
+          <p>Loading gym occupancy data...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="text-center p-4 mb-4 bg-red-500 bg-opacity-50 rounded-lg">
+          <p>{error}</p>
+          <button 
+            onClick={fetchOccupancyData}
+            className="mt-2 px-4 py-2 bg-white text-red-600 rounded-lg font-semibold hover:bg-red-100 transition"
+          >
+            Try Again
+          </button>
+        </div>
+      )}
 
       {/* Gym Stats */}
       <div className="grid grid-cols-2 gap-6 text-center">
-        {[
-          { label: "Muscle Fitness", value: "10 / 34" },
-          { label: "Aerobic", value: "1 / 9" },
-          { label: "Functional", value: "0 / 2" },
-          { label: "Not On Devices", value: "2" },
-        ].map((item, index) => (
+        {adjustedCategories.map((item, index) => (
           <button
             key={index}
             className="bg-white bg-opacity-10 p-5 rounded-lg shadow-lg focus:outline-none hover:bg-opacity-30 transition duration-300 transform hover:scale-105"
             onClick={() => handleCardClick(item.label)}
           >
-            <p className="text-3xl font-bold">{item.value}</p>
+            <p className="text-3xl font-bold">
+              {item.total ? `${item.current} / ${item.total}` : item.current}
+            </p>
             <p className="text-sm mt-1 font-medium">{item.label}</p>
           </button>
         ))}
@@ -169,6 +201,13 @@ const NowPage = () => {
         </div>
       </div>
 
+      {/* Last Update Timestamp */}
+      {occupancyData && (
+        <p className="text-center text-xs opacity-70 mb-3">
+          Last updated: {new Date(occupancyData.timestamp).toLocaleTimeString()}
+        </p>
+      )}
+
       {/* Forecast Button */}
       <button
         className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-bold py-4 rounded-xl mt-6 shadow-lg transition duration-300 transform hover:scale-105"
@@ -179,7 +218,7 @@ const NowPage = () => {
 
       {/* Forecast Modal */}
       {showForecast && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
           <div className="bg-white text-gray-900 rounded-lg shadow-xl p-6 max-w-md w-full">
             <h2 className="text-xl font-bold text-center mb-4">📊 Gym Occupancy Forecast</h2>
             <ul className="space-y-3">
@@ -207,4 +246,3 @@ const NowPage = () => {
 };
 
 export default NowPage;
-

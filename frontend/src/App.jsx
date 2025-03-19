@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import NowPage from "./components/NowPage";
 import WeekPage from "./components/WeekPage";
 import PTBetaPage from "./components/PTBetaPage";
+// import MoisturePage from "./components/MoisturePage";
 
 const App = () => {
   return (
@@ -17,12 +18,14 @@ const App = () => {
           <Link to="/ptbeta" className="font-bold">
             I PT Beta
           </Link>
+          {/* <Link to="/moisture" className="font-bold">Moisture</Link> */}
         </nav>
         <div className="p-4">
           <Routes>
             <Route path="/" element={<NowPage />} />
             <Route path="/week" element={<WeekPage />} />
             <Route path="/ptbeta" element={<PTBetaPage />} />
+            {/* <Route path="/moisture" element={<MoisturePage />} /> */}
           </Routes>
         </div>
       </div>
