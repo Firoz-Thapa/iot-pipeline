@@ -1,0 +1,4 @@
+# Ignore sensitive configuration files
+app_secrets.py
+.env
+*.local
