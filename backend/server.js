@@ -83,40 +83,54 @@ app.get('/api/occupancy', async (req, res) => {
   }
 });
 
-app.get('/api/moisture/historical', async (req, res) => {
+// Add the new gym-entries endpoint
+app.get('/api/gym-entries', async (req, res) => {
   try {
-    const hours = req.query.hours || 24;
+    // Get the time range from query parameters, default to last 5 minutes
+    const minutes = req.query.minutes || 5;
     
     const fluxQuery = `
       from(bucket: "${bucket}")
-        |> range(start: -${hours}h)
-        |> filter(fn: (r) => r._measurement == "moisture_level")
-        |> sort(columns: ["_time"])
-        |> limit(n: 1000)
+        |> range(start: -${minutes}m)
+        |> filter(fn: (r) => r._measurement == "test_measurement" and r.device == "pir")
+        |> filter(fn: (r) => r._field == "value")
+        |> sort(columns: ["_time"], desc: true)
+        |> limit(n: 10)  // Only get the 10 most recent entries for faster response
     `;
+    
+    console.log("Executing optimized InfluxDB query for gym entries");
     
     const result = await queryApi.collectRows(fluxQuery);
     
     if (!result || result.length === 0) {
-      // If no data found, simulate some data for demo purposes
-      const simulatedData = simulateMoistureData(parseInt(hours));
-      return res.json(simulatedData);
+      console.log("No gym entry data found in InfluxDB");
+      return res.json({ message: "No data found", data: [] });
     }
     
+    // Format the data for the frontend
     const formattedData = result.map(row => ({
       timestamp: row._time,
-      value: row._value,
-      status: determineMoistureStatus(row._value)
+      count: row._value,
+      device: row.device
     }));
     
-    res.json(formattedData);
+    console.log(`Successfully fetched ${result.length} gym entries from InfluxDB`);
+    console.log(`Latest count value: ${formattedData[0].count}`);
+    
+    res.json({
+      message: "Data retrieved successfully",
+      count: formattedData.length,
+      data: formattedData
+    });
   } catch (error) {
-    console.error('Error fetching historical moisture data:', error);
-    // Always return some data even if the query fails
-    const simulatedData = simulateMoistureData(parseInt(req.query.hours || 24));
-    res.json(simulatedData);
+    console.error('Error fetching gym entry data:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch gym entry data',
+      message: error.message 
+    });
   }
 });
+
 
 // Generate workout plan endpoint
 app.post('/generate-workout', async (req, res) => {
@@ -348,39 +362,11 @@ function simulateOccupancyData() {
   return data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 }
 
-// Helper function to simulate moisture data
-function simulateMoistureData(hours) {
-  const data = [];
-  const now = new Date();
-  const points = Math.min(hours * 4, 1000); // 4 readings per hour, maximum 1000 points
-  
-  for (let i = 0; i < points; i++) {
-    const timestamp = new Date(now.getTime() - (i * (hours * 3600000 / points)));
-    // Random value between 0 and 100
-    const value = Math.floor(Math.random() * 100);
-    
-    data.push({
-      timestamp: timestamp.toISOString(),
-      value: value,
-      status: determineMoistureStatus(value)
-    });
-  }
-  
-  return data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-}
-
 function determineStatus(value) {
   if (value < 20) return 'low';
   if (value < 60) return 'moderate';
   if (value < 85) return 'high';
   return 'critical';
-}
-
-function determineMoistureStatus(value) {
-  if (value < 20) return 'dry';
-  if (value < 60) return 'moderate';
-  if (value < 85) return 'moist';
-  return 'wet';
 }
 
 // Set up WebSocket server
@@ -390,17 +376,19 @@ const wss = new WebSocket.Server({ server });
 wss.on('connection', (ws) => {
   console.log('WebSocket client connected');
   
-  // Send initial moisture data
-  fetchMoistureData().then(data => {
+  // Send initial gym entry data
+  fetchGymEntryData().then(data => {
     if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify(data[data.length - 1] || { 
-        timestamp: new Date().toISOString(), 
-        value: 0, 
-        status: 'active' 
+      ws.send(JSON.stringify({
+        type: 'gym_entry',
+        data: data.length > 0 ? data[data.length - 1] : { 
+          timestamp: new Date().toISOString(), 
+          count: 0 
+        }
       }));
     }
   }).catch(error => {
-    console.error('Error sending initial moisture data:', error);
+    console.error('Error sending initial gym entry data:', error);
   });
   
   ws.on('message', (message) => {
@@ -416,13 +404,14 @@ wss.on('connection', (ws) => {
   });
 });
 
-// Send moisture data periodically
-async function fetchMoistureData() {
+// Fetch gym entry data for WebSocket
+async function fetchGymEntryData() {
   try {
     const fluxQuery = `
       from(bucket: "${bucket}")
         |> range(start: -1h)
-        |> filter(fn: (r) => r._measurement == "moisture_level")
+        |> filter(fn: (r) => r._measurement == "test_measurement" and r.device == "pir")
+        |> filter(fn: (r) => r._field == "value")
         |> sort(columns: ["_time"])
         |> limit(n: 30)
     `;
@@ -430,51 +419,59 @@ async function fetchMoistureData() {
     const result = await queryApi.collectRows(fluxQuery);
     
     if (!result || result.length === 0) {
-      return simulateMoistureData(1);
+      console.log("No gym entry data found for WebSocket");
+      return [];
     }
     
-    return result.map(row => ({
+    const formattedData = result.map(row => ({
       timestamp: row._time,
-      value: row._value,
-      status: determineMoistureStatus(row._value)
+      count: row._value
     }));
+    
+    console.log(`Fetched ${formattedData.length} gym entries for WebSocket`);
+    return formattedData;
   } catch (error) {
-    console.error('Error fetching moisture data:', error);
-    return simulateMoistureData(1);
+    console.error('Error fetching gym entry data for WebSocket:', error);
+    return [];
   }
 }
 
-// Send moisture updates to all connected clients every 5 seconds
+// Send gym entry updates to all connected clients every 10 seconds
 setInterval(() => {
   if (wss.clients.size > 0) {
-    const now = new Date();
-    // Random value between 0 and 100 for demonstration
-    const moistureValue = Math.floor(Math.random() * 100);
+    // Optimized query that only gets the latest entry
+    const fluxQuery = `
+      from(bucket: "${bucket}")
+        |> range(start: -1m)
+        |> filter(fn: (r) => r._measurement == "test_measurement" and r.device == "pir")
+        |> filter(fn: (r) => r._field == "value")
+        |> sort(columns: ["_time"], desc: true)
+        |> limit(n: 1)
+    `;
     
-    const data = {
-      timestamp: now.toISOString(),
-      value: moistureValue,
-      status: determineMoistureStatus(moistureValue)
-    };
-    
-    // Save to InfluxDB
-    const point = new Point('moisture_level')
-      .floatField('value', moistureValue)
-      .timestamp(now);
-    
-    writeApi.writePoint(point);
-    writeApi.flush().catch(e => console.error('Error writing to InfluxDB:', e));
-    
-    // Send to all clients
-    wss.clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(data));
+    queryApi.collectRows(fluxQuery).then(result => {
+      if (result && result.length > 0) {
+        const latestEntry = {
+          timestamp: result[0]._time,
+          count: result[0]._value
+        };
+        
+        console.log(`Sending latest gym entry count (${latestEntry.count}) to ${wss.clients.size} clients via WebSocket`);
+        
+        wss.clients.forEach(client => {
+          if (client.readyState === WebSocket.OPEN) {
+            client.send(JSON.stringify({
+              type: 'gym_entry',
+              data: latestEntry
+            }));
+          }
+        });
       }
+    }).catch(error => {
+      console.error('Error sending gym entry updates via WebSocket:', error);
     });
-    
-    console.log(`Sent moisture data (${moistureValue}) to ${wss.clients.size} clients`);
   }
-}, 5000);
+}, 2000)
 
 // Start the server
 const PORT = process.env.PORT || 5000;
@@ -482,6 +479,7 @@ server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   await testInfluxConnection();
   console.log('✅ Workout generator endpoint available at http://localhost:' + PORT + '/generate-workout');
+  console.log('✅ Gym entries API available at http://localhost:' + PORT + '/api/gym-entries');
 });
 
 // Error handling for uncaught exceptions

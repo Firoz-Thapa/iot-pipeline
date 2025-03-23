@@ -5,55 +5,122 @@ import "./NowPage.css";
 const NowPage = () => {
   const [selectedRating, setSelectedRating] = useState(0);
   const [showForecast, setShowForecast] = useState(false);
-  const [occupancyData, setOccupancyData] = useState(null);
+  const [gymEntryData, setGymEntryData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [areaDistribution, setAreaDistribution] = useState([]);
 
-  // Categories for display
+  // Updated categories with new names
   const categories = [
-    { label: "Muscle Fitness", current: 0, total: 34 },
-    { label: "Aerobic", current: 0, total: 9 },
-    { label: "Functional", current: 0, total: 2 },
-    { label: "Not On Devices", current: 0 }
+    { label: "Strength Zone", current: 0, total: 34 },
+    { label: "Cardio Area", current: 0, total: 9 },
+    { label: "CrossFit Space", current: 0, total: 2 },
+    { label: "Stretching Area", current: 0 }
   ];
 
-  // Fetch occupancy data from backend
-  const fetchOccupancyData = async () => {
+  // Fetch gym entry data from backend
+  const fetchGymEntryData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/occupancy', {
-        timeout: 10000, // 10 second timeout
+      // Use the gym-entries endpoint
+      const response = await axios.get('http://localhost:5000/api/gym-entries', {
+        timeout: 5000,
       });
       
-      if (response.data && Array.isArray(response.data)) {
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
         // Sort by timestamp to get the latest data
-        const sortedData = [...response.data].sort((a, b) => 
+        const sortedData = [...response.data.data].sort((a, b) => 
           new Date(b.timestamp) - new Date(a.timestamp)
         );
         
-        setOccupancyData(sortedData[0]); // Get the most recent reading
+        if (sortedData.length > 0) {
+          const currentCount = sortedData[0].count;
+          
+          setGymEntryData({
+            value: currentCount,
+            timestamp: sortedData[0].timestamp
+          });
+          
+          // Generate random distribution when count changes
+          setAreaDistribution(generateRandomDistribution(currentCount));
+        } else {
+          setGymEntryData({
+            value: 0,
+            timestamp: new Date().toISOString()
+          });
+          setAreaDistribution([0, 0, 0, 0]);
+        }
+        
         setError(null);
         setRetryCount(0);
       } else {
         throw new Error('Invalid data format received');
       }
     } catch (error) {
-      console.error('Error fetching occupancy data:', error);
+      console.error('Error fetching gym entry data:', error);
       setError(`Failed to connect to the server. Please try again later.`);
-      
-      // Increment retry count for exponential backoff
       setRetryCount(prev => prev + 1);
     } finally {
       setLoading(false);
     }
   };
 
+  // Randomly distribute people across areas ensuring the sum equals total
+  const generateRandomDistribution = (total) => {
+    if (total === 0) return [0, 0, 0, 0];
+    
+    // Generate random weights for distribution
+    const weights = [
+      Math.random() + 0.5, // Slightly favor strength zone
+      Math.random(),
+      Math.random() * 0.7, // Less likely to be in CrossFit
+      Math.random()
+    ];
+    
+    const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
+    
+    // Initial distribution based on weights
+    let distribution = weights.map(weight => 
+      Math.floor(total * (weight / weightSum))
+    );
+    
+    // Calculate the current sum of all areas
+    const distributionSum = distribution.reduce((sum, count) => sum + count, 0);
+    
+    // Adjust to ensure the sum equals the total
+    const difference = total - distributionSum;
+    
+    if (difference > 0) {
+      // Add the remaining people
+      for (let i = 0; i < difference; i++) {
+        // Add to a random area, with lower chance for CrossFit (index 2)
+        const randomIndex = Math.random() < 0.3 ? 2 : Math.floor(Math.random() * 4);
+        distribution[randomIndex]++;
+      }
+    } else if (difference < 0) {
+      // Remove excess people
+      for (let i = 0; i < Math.abs(difference); i++) {
+        // Find an area with people to remove from
+        const availableAreas = distribution
+          .map((count, index) => ({ count, index }))
+          .filter(item => item.count > 0);
+          
+        if (availableAreas.length > 0) {
+          const randomArea = availableAreas[Math.floor(Math.random() * availableAreas.length)];
+          distribution[randomArea.index]--;
+        }
+      }
+    }
+    
+    return distribution;
+  };
+
   // Retry with exponential backoff if there's an error
   useEffect(() => {
     if (error && retryCount > 0) {
       const backoffTime = Math.min(2000 * Math.pow(2, retryCount - 1), 30000); // Max 30s
-      const timeoutId = setTimeout(fetchOccupancyData, backoffTime);
+      const timeoutId = setTimeout(fetchGymEntryData, backoffTime);
       
       return () => clearTimeout(timeoutId);
     }
@@ -61,10 +128,10 @@ const NowPage = () => {
 
   // Initial data fetch and polling setup
   useEffect(() => {
-    fetchOccupancyData();
+    fetchGymEntryData();
     
-    // Set up polling interval - every 30 seconds
-    const intervalId = setInterval(fetchOccupancyData, 30000);
+    // Set up polling interval
+    const intervalId = setInterval(fetchGymEntryData, 5000);
     
     // Clean up interval on component unmount
     return () => clearInterval(intervalId);
@@ -91,7 +158,7 @@ const NowPage = () => {
 
   // Forecast data based on current occupancy
   const generateForecastData = () => {
-    const currentValue = occupancyData?.value || 13;
+    const currentValue = gymEntryData?.value || 0;
     
     return [
       { time: "Now", people: currentValue },
@@ -102,36 +169,20 @@ const NowPage = () => {
     ];
   };
 
-  // Dynamic categories adjusted by occupancy data
-  const getAdjustedCategories = () => {
-    if (!occupancyData) return categories;
+  // Get area counts from distribution
+  const getAreasWithCounts = () => {
+    if (!gymEntryData || areaDistribution.length === 0) {
+      return categories;
+    }
     
-    const totalPeople = occupancyData.value || 13;
-    const adjustedCategories = [...categories];
-    
-    // Distribute people across categories using a weighted approach
-    let peoplePlaced = 0;
-    
-    // 60% in Muscle Fitness
-    adjustedCategories[0].current = Math.floor(totalPeople * 0.6);
-    peoplePlaced += adjustedCategories[0].current;
-    
-    // 20% in Aerobic
-    adjustedCategories[1].current = Math.floor(totalPeople * 0.2);
-    peoplePlaced += adjustedCategories[1].current;
-    
-    // 5% in Functional
-    adjustedCategories[2].current = Math.floor(totalPeople * 0.05);
-    peoplePlaced += adjustedCategories[2].current;
-    
-    // Remaining in Not On Devices
-    adjustedCategories[3].current = totalPeople - peoplePlaced;
-    
-    return adjustedCategories;
+    return categories.map((category, index) => ({
+      ...category,
+      current: areaDistribution[index]
+    }));
   };
 
   // Get adjusted categories with real data factored in
-  const adjustedCategories = getAdjustedCategories();
+  const areasWithCounts = getAreasWithCounts();
   // Generate forecast data
   const forecastData = generateForecastData();
 
@@ -141,12 +192,12 @@ const NowPage = () => {
       <div className="flex items-center space-x-3 mb-6">
         <div className="blinking-light animate-pulse w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
         <h2 className="text-3xl font-extrabold tracking-wide">
-          🏋️ {occupancyData ? occupancyData.value : '...'} people in the gym
+          🏋️ {gymEntryData ? gymEntryData.value : '...'} people in the gym
         </h2>
       </div>
 
       {/* Loading or Error States */}
-      {loading && !occupancyData && (
+      {loading && !gymEntryData && (
         <div className="text-center p-4 mb-4 bg-blue-600 bg-opacity-50 rounded-lg">
           <p>Loading gym occupancy data...</p>
         </div>
@@ -156,7 +207,7 @@ const NowPage = () => {
         <div className="text-center p-4 mb-4 bg-red-500 bg-opacity-50 rounded-lg">
           <p>{error}</p>
           <button 
-            onClick={fetchOccupancyData}
+            onClick={fetchGymEntryData}
             className="mt-2 px-4 py-2 bg-white text-red-600 rounded-lg font-semibold hover:bg-red-100 transition"
           >
             Try Again
@@ -164,9 +215,16 @@ const NowPage = () => {
         </div>
       )}
 
+      {/* Real-time Indicator */}
+      {gymEntryData && !error && (
+        <div className="text-center p-3 mb-4 bg-green-500 bg-opacity-30 rounded-lg">
+          <p className="text-sm font-medium">🔴 Live Data from PIR Sensor</p>
+        </div>
+      )}
+
       {/* Gym Stats */}
       <div className="grid grid-cols-2 gap-6 text-center">
-        {adjustedCategories.map((item, index) => (
+        {areasWithCounts.map((item, index) => (
           <button
             key={index}
             className="bg-white bg-opacity-10 p-5 rounded-lg shadow-lg focus:outline-none hover:bg-opacity-30 transition duration-300 transform hover:scale-105"
@@ -181,7 +239,7 @@ const NowPage = () => {
       </div>
 
       {/* Footer Section */}
-      <p className="text-center mt-8 text-sm opacity-70 font-light italic">Powered By IoT</p>
+      <p className="text-center mt-8 text-sm opacity-70 font-light italic">Powered By IoT PIR Sensor</p>
       <div className="text-center my-6">
         <p className="text-lg mb-3 font-semibold">How well does the gym equipment support your training?</p>
         <div className="flex justify-center mt-2 space-x-2">
@@ -202,9 +260,9 @@ const NowPage = () => {
       </div>
 
       {/* Last Update Timestamp */}
-      {occupancyData && (
+      {gymEntryData && (
         <p className="text-center text-xs opacity-70 mb-3">
-          Last updated: {new Date(occupancyData.timestamp).toLocaleTimeString()}
+          Last updated: {new Date(gymEntryData.timestamp).toLocaleTimeString()}
         </p>
       )}
 
