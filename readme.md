@@ -185,11 +185,25 @@ sudo ufw allow 9001/tcp  # MQTT WebSockets
 
 ---
 
-## Link to the Presentation
+## Demonstration, pictures and links
+
+# Demonstration
 
 [View the presentation](./Gym%20Occupancy%20Monitoring%20System%20with%20AI%20and%20IoT_Group%20G.pdf)
 
 [View the video presentation](https://youtu.be/yDCnUDdUOn4)
+
+[View the application](https://youtube.com/shorts/FH_Mufzr4q8?feature=share)
+
+# Pictures
+
+![WhatsApp Image 2025-03-25 at 10 41 31 (2)](https://github.com/user-attachments/assets/3a27974c-e769-42bf-9d18-77d8129bc3d8)
+![WhatsApp Image 2025-03-25 at 10 41 31 (1)](https://github.com/user-attachments/assets/de56a2de-5879-43dd-853d-20bf32f35e04)
+![WhatsApp Image 2025-03-25 at 10 41 31](https://github.com/user-attachments/assets/7081abff-6c83-4a84-a818-3605649460e7)
+
+# Link
+
+http://135.236.212.218:8000/
 
 ---
 
