@@ -63,7 +63,66 @@ This project aims to develop an AI-powered gym occupancy monitoring system that 
    - Implement AI-based analytics for activity insights.
 
 --- 
+## Implementation Progress
 
+### Completed Tasks
+* ✅ Successfully deployed backend services on Microsoft Azure
+* ✅ Configured InfluxDB for storing real-time occupancy data
+* ✅ Set up MQTT broker for IoT communication
+* ✅ Implemented Docker containerization for all services
+* ✅ Created frontend dashboard with real-time zone occupancy display
+* ✅ Implemented API endpoints for retrieving gym occupancy data
+* ✅ Added AI-powered workout generation feature
+* ✅ Configured network security and firewall rules
+
+### Technical Configuration
+* Backend: Node.js/Express running on port 3000
+* Frontend: React.js served via Nginx on port 8000
+* Database: InfluxDB (bucket: iot-data, org: LAB)
+* MQTT Broker: Eclipse Mosquitto on ports 1883/9001
+* Deployment: Docker containers on Azure VM
+
+## Deployment Guide
+
+### Prerequisites
+* Ubuntu server (tested on 24.04 LTS)
+* Docker and Docker Compose
+* Git
+
+### Installation Steps
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/iot-gym-system.git
+   cd iot-gym-system
+
+2. Configure environment variables:
+```bash
+# Create .env file with required variables
+cat > .env << EOL
+INFLUX_TOKEN=your_influxdb_token
+INFLUX_ORG=LAB
+INFLUX_BUCKET=iot-data
+INFLUX_URL=http://your_server_ip:8086
+EOL
+```
+
+3. Set up Nginx reverse proxy:
+```bash
+mkdir -p nginx-conf
+```
+
+4. Deploy with Docker Compose:
+```bash
+docker-compose up -d
+```
+5. Configure firewall rules:
+```bash
+sudo ufw allow 8000/tcp  # Frontend
+sudo ufw allow 3000/tcp  # Backend API
+sudo ufw allow 8086/tcp  # InfluxDB
+sudo ufw allow 1883/tcp  # MQTT
+sudo ufw allow 9001/tcp  # MQTT WebSockets
+```
 
 
 ## Project Goals
