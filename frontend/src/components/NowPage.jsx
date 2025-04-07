@@ -11,7 +11,6 @@ const NowPage = () => {
   const [retryCount, setRetryCount] = useState(0);
   const [areaDistribution, setAreaDistribution] = useState([]);
 
-  // Updated categories with new names
   const categories = [
     { label: "Strength Zone", current: 0, total: 34 },
     { label: "Cardio Area", current: 0, total: 9 },
@@ -19,30 +18,24 @@ const NowPage = () => {
     { label: "Stretching Area", current: 0 }
   ];
 
-  // Fetch gym entry data from backend
   const fetchGymEntryData = async () => {
     try {
       setLoading(true);
-      // Use the gym-entries endpoint
       const response = await axios.get('http://localhost:5000/api/gym-entries', {
         timeout: 5000,
       });
       
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        // Sort by timestamp to get the latest data
         const sortedData = [...response.data.data].sort((a, b) => 
           new Date(b.timestamp) - new Date(a.timestamp)
         );
         
         if (sortedData.length > 0) {
           const currentCount = sortedData[0].count;
-          
           setGymEntryData({
             value: currentCount,
             timestamp: sortedData[0].timestamp
           });
-          
-          // Generate random distribution when count changes
           setAreaDistribution(generateRandomDistribution(currentCount));
         } else {
           setGymEntryData({
@@ -58,7 +51,6 @@ const NowPage = () => {
         throw new Error('Invalid data format received');
       }
     } catch (error) {
-      console.error('Error fetching gym entry data:', error);
       setError(`Failed to connect to the server. Please try again later.`);
       setRetryCount(prev => prev + 1);
     } finally {
@@ -66,42 +58,32 @@ const NowPage = () => {
     }
   };
 
-  // Randomly distribute people across areas ensuring the sum equals total
   const generateRandomDistribution = (total) => {
     if (total === 0) return [0, 0, 0, 0];
     
-    // Generate random weights for distribution
     const weights = [
-      Math.random() + 0.5, // Slightly favor strength zone
+      Math.random() + 0.5,
       Math.random(),
-      Math.random() * 0.7, // Less likely to be in CrossFit
+      Math.random() * 0.7,
       Math.random()
     ];
     
     const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
     
-    // Initial distribution based on weights
     let distribution = weights.map(weight => 
       Math.floor(total * (weight / weightSum))
     );
     
-    // Calculate the current sum of all areas
     const distributionSum = distribution.reduce((sum, count) => sum + count, 0);
-    
-    // Adjust to ensure the sum equals the total
     const difference = total - distributionSum;
     
     if (difference > 0) {
-      // Add the remaining people
       for (let i = 0; i < difference; i++) {
-        // Add to a random area, with lower chance for CrossFit (index 2)
         const randomIndex = Math.random() < 0.3 ? 2 : Math.floor(Math.random() * 4);
         distribution[randomIndex]++;
       }
     } else if (difference < 0) {
-      // Remove excess people
       for (let i = 0; i < Math.abs(difference); i++) {
-        // Find an area with people to remove from
         const availableAreas = distribution
           .map((count, index) => ({ count, index }))
           .filter(item => item.count > 0);
@@ -116,38 +98,20 @@ const NowPage = () => {
     return distribution;
   };
 
-  // Retry with exponential backoff if there's an error
-  useEffect(() => {
-    if (error && retryCount > 0) {
-      const backoffTime = Math.min(2000 * Math.pow(2, retryCount - 1), 30000); // Max 30s
-      const timeoutId = setTimeout(fetchGymEntryData, backoffTime);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [error, retryCount]);
-
-  // Initial data fetch and polling setup
   useEffect(() => {
     fetchGymEntryData();
-    
-    // Set up polling interval
     const intervalId = setInterval(fetchGymEntryData, 5000);
-    
-    // Clean up interval on component unmount
     return () => clearInterval(intervalId);
   }, []);
 
-  // Handle rating clicks
   const handleRatingClick = (index) => {
     setSelectedRating(index + 1);
   };
 
-  // Handle card clicks
   const handleCardClick = (category) => {
     alert(`You clicked on ${category}`);
   };
 
-  // Toggle forecast modal
   const handleForecastClick = () => {
     setShowForecast(true);
   };
@@ -156,10 +120,8 @@ const NowPage = () => {
     setShowForecast(false);
   };
 
-  // Forecast data based on current occupancy
   const generateForecastData = () => {
     const currentValue = gymEntryData?.value || 0;
-    
     return [
       { time: "Now", people: currentValue },
       { time: "1 Hour +", people: Math.max(5, Math.floor(currentValue * (1 + Math.random() * 0.3))) },
@@ -169,28 +131,24 @@ const NowPage = () => {
     ];
   };
 
-  // Get area counts from distribution
   const getAreasWithCounts = () => {
     if (!gymEntryData || areaDistribution.length === 0) {
       return categories;
     }
-    
     return categories.map((category, index) => ({
       ...category,
       current: areaDistribution[index]
     }));
   };
 
-  // Get adjusted categories with real data factored in
   const areasWithCounts = getAreasWithCounts();
-  // Generate forecast data
   const forecastData = generateForecastData();
 
   return (
-    <div className="bg-gradient-to-b from-blue-700 to-blue-900 rounded-2xl shadow-2xl p-8 text-white max-w-lg mx-auto lg:max-w-2xl transition-all duration-300">
+    <div className="bg-gradient-to-b from-teal-700 to-teal-900 rounded-2xl shadow-lg p-8 text-gray-100 max-w-lg mx-auto lg:max-w-2xl transition-all duration-300">
       {/* Blinking Light with Text */}
       <div className="flex items-center space-x-3 mb-6">
-        <div className="blinking-light animate-pulse w-4 h-4 bg-red-500 rounded-full shadow-lg"></div>
+        <div className="blinking-light animate-pulse w-4 h-4 bg-amber-400 rounded-full shadow-lg"></div>
         <h2 className="text-3xl font-extrabold tracking-wide">
           🏋️ {gymEntryData ? gymEntryData.value : '...'} people in the gym
         </h2>
@@ -198,13 +156,13 @@ const NowPage = () => {
 
       {/* Loading or Error States */}
       {loading && !gymEntryData && (
-        <div className="text-center p-4 mb-4 bg-blue-600 bg-opacity-50 rounded-lg">
+        <div className="text-center p-4 mb-4 bg-teal-600 bg-opacity-50 rounded-lg">
           <p>Loading gym occupancy data...</p>
         </div>
       )}
 
       {error && (
-        <div className="text-center p-4 mb-4 bg-red-500 bg-opacity-50 rounded-lg">
+        <div className="text-center p-4 mb-4 bg-red-600 bg-opacity-50 rounded-lg">
           <p>{error}</p>
           <button 
             onClick={fetchGymEntryData}
@@ -249,7 +207,7 @@ const NowPage = () => {
               <button
                 key={index}
                 className={`w-10 h-10 rounded-full cursor-pointer transition duration-300 transform hover:scale-110 ${
-                  selectedRating > index ? "bg-yellow-400 shadow-lg" : "bg-white bg-opacity-20"
+                  selectedRating > index ? "bg-amber-500 shadow-lg" : "bg-white bg-opacity-20"
                 }`}
                 onClick={() => handleRatingClick(index)}
               >
@@ -291,7 +249,7 @@ const NowPage = () => {
               ))}
             </ul>
             <button
-              className="w-full bg-blue-600 text-white font-bold py-2 rounded-lg mt-4 hover:bg-blue-700 transition duration-300"
+              className="w-full bg-teal-600 text-white font-bold py-2 rounded-lg mt-4 hover:bg-teal-700 transition duration-300"
               onClick={handleCloseForecast}
             >
               ❌ Close

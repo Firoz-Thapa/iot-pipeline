@@ -21,11 +21,12 @@ const WeekPage = () => {
 
   // Category names updated to match NowPage
   const categories = [
-    { id: 'strength', label: 'Strength Zone', color: 'rgba(54, 162, 235, 0.7)' },
-    { id: 'cardio', label: 'Cardio Area', color: 'rgba(255, 99, 132, 0.7)' },
-    { id: 'crossfit', label: 'CrossFit Space', color: 'rgba(75, 192, 192, 0.7)' },
-    { id: 'stretching', label: 'Stretching Area', color: 'rgba(153, 102, 255, 0.7)' }
-  ];
+    { id: 'strength', label: 'Strength Zone', color: 'rgba(255, 99, 132, 0.7)' }, // Red
+    { id: 'cardio', label: 'Cardio Area', color: 'rgba(54, 162, 235, 0.7)' },     // Blue
+    { id: 'crossfit', label: 'CrossFit Space', color: 'rgba(255, 159, 64, 0.7)' },  // Orange
+    { id: 'stretching', label: 'Stretching Area', color: 'rgba(75, 192, 192, 0.7)' } // Teal
+];
+
 
   // Fetch weekly data from API
   useEffect(() => {
@@ -205,7 +206,7 @@ const WeekPage = () => {
       title: {
         display: true,
         text: "Weekly Gym Usage Statistics",
-        color: "#3b82f6", // Blue color to match theme
+        color: "#10B981", // Green color to match theme
         font: {
           size: 18,
           weight: 'bold'
@@ -213,25 +214,22 @@ const WeekPage = () => {
       },
       tooltip: {
         callbacks: {
-       
-           
-            
-          }
+          // Tooltip customization
         }
       }
     }
-   
+  };
 
   return (
-    <div className="bg-gradient-to-b from-blue-600 to-blue-800 min-h-screen flex flex-col items-center justify-center p-4">
+    <div className="bg-gradient-to-b from-green-600 to-green-800 min-h-screen flex flex-col items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg p-6 w-11/12 lg:w-3/4">
-        <h2 className="text-2xl font-bold text-blue-600 mb-4 text-center">
+        <h2 className="text-2xl font-bold text-green-600 mb-4 text-center">
           Weekly Usage
         </h2>
 
         {loading && !chartData && (
           <div className="text-center p-10">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-700 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading weekly data...</p>
           </div>
         )}
