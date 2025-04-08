@@ -35,8 +35,8 @@ html {
   font-size: 16px;
 }
 
-.btnBlue {
-  background-color: #00AEEF;
+.btnGreen {
+  background-color: #32CD32; /* LimeGreen for the main button */
   color: #fff;
   padding: 10px 20px;
   border: none;
@@ -46,8 +46,8 @@ html {
   font-size: 16px;
 }
 
-.btnBlue:hover {
-  background-color: #0086b3;
+.btnGreen:hover {
+  background-color: #228B22; /* ForestGreen on hover */
 }
 
 .grid {
@@ -95,13 +95,13 @@ body.light-mode .inputBox input {
   color: #000; 
 }
 
-body.light-mode .btnBlue {
-  background-color: #0077cc; 
+body.light-mode .btnGreen {
+  background-color: #32CD32; /* LimeGreen for the main button */
   color: #fff; 
 }
 
-body.light-mode .btnBlue:hover {
-  background-color: #005fa3;
+body.light-mode .btnGreen:hover {
+  background-color: #228B22; /* ForestGreen on hover */
 }
 
 /* Dropdown Menu Styling */
@@ -114,3 +114,4 @@ body.dark-mode .dropDownNavbar {
   background-color: #1A1919;
   color: #fff;
 }
+

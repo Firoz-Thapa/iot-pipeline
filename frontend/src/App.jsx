@@ -8,7 +8,7 @@ const App = () => {
   return (
     <Router>
       <div className="bg-gray-100 min-h-screen">
-        <nav className="bg-blue-500 p-4 text-white flex justify-around">
+        <nav className="bg-green-700 p-4 text-white flex justify-around"> {/* Changed to bg-green-700 */}
           <Link to="/" className="font-bold">
             Now
           </Link>
@@ -34,3 +34,5 @@ const App = () => {
 };
 
 export default App;
+
+
