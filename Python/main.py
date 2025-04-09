@@ -17,7 +17,7 @@ EXIT_PIR_PIN = 29   # PIR sensors for detecting departures (PIN 29)
 INFLUXDB_URL = "http://135.236.212.218:8086"
 INFLUXDB_BUCKET = "iot-data"
 INFLUXDB_ORG = "LAB"
-INFLUXDB_TOKEN = "XFym-O4pGm1v4zmRkAlyW-tr1m_HJpivBYxoiOo_YBw5hl9uafe-TxJIrnN8CbFg3ITASDtklyxmbUQUn5u95Q=="
+INFLUXDB_TOKEN = ""
 
 # IMPORTANT: Use the measurement name that's working
 MEASUREMENT_NAME = "test_measurement"  # This is the name that works in your InfluxDB
