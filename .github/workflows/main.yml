@@ -133,7 +133,7 @@ jobs:
       with:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
-        if_key_exists: replace  # Ensure the key is properly set
+        if_key_exists: replace
         
     - name: Add server to known_hosts
       run: |
@@ -163,11 +163,6 @@ jobs:
       run: |
         # Modify InfluxDB port from 8086 to 8087 to avoid conflicts
         sed -i 's/8086:8086/8087:8086/' deploy/docker-compose.yml
-        
-    - name: Debug SSH connection
-      run: |
-        echo "Checking SSH connection..."
-        ssh -v ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} "echo 'SSH connection successful'"
         
     - name: Copy files to server
       run: |
