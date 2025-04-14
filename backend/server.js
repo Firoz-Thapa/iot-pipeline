@@ -22,8 +22,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // InfluxDB configuration
 const url = process.env.INFLUX_URL || 'http://localhost:8086';
-const token = process.env.INFLUX_TOKEN || 'your-influx-token';
-const org = process.env.INFLUX_ORG || 'your-org';
+const token = process.env.INFLUX_TOKEN || 'XFym-O4pGm1v4zmRkAlyW-tr1m_HJpivBYxoiOo_YBw5hl9uafe-TxJIrnN8CbFg3ITASDtklyxmbUQUn5u95Q==';
+const org = process.env.INFLUX_ORG || 'LAB';
 const bucket = process.env.INFLUX_BUCKET || 'iot_monitoring';
 
 // Gemini API configuration

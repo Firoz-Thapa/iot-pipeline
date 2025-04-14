@@ -9,35 +9,92 @@ import gc
 WIFI_SSID = "Firoz thapa"
 WIFI_PASSWORD = "Firoz123"
 
-# PIR sensor pin
-ENTRY_PIR_PIN = 27  # PIR sensors for entry detection (PIN 27)
-EXIT_PIR_PIN = 29   # PIR sensors for detecting departures (PIN 29)
+# PIR sensor pins
+ENTRY_PIR_PIN = 22  # GP22 where the ENTRY sensor is connected
+EXIT_PIR_PIN = 21   # GP21 where the EXIT sensor is connected
 
 # InfluxDB Configuration
 INFLUXDB_URL = "http://135.236.212.218:8086"
 INFLUXDB_BUCKET = "iot-data"
 INFLUXDB_ORG = "LAB"
-INFLUXDB_TOKEN = ""
+INFLUXDB_TOKEN = "XFym-O4pGm1v4zmRkAlyW-tr1m_HJpivBYxoiOo_YBw5hl9uafe-TxJIrnN8CbFg3ITASDtklyxmbUQUn5u95Q=="
+MEASUREMENT_NAME = "test_measurement"
 
-# IMPORTANT: Use the measurement name that's working
-MEASUREMENT_NAME = "test_measurement"  # This is the name that works in your InfluxDB
+# Motion Detection Parameters
+MOTION_THRESHOLD = 10    # Consistent threshold for both sensors
+MOTION_CHECK_DURATION = 2.0  # Duration to check for motion
+DETECTION_COOLDOWN = 3.0     # Cooldown between detections
 
 # ======= GLOBALS =======
-current_count = 0
-last_detection_time = 0
-detection_cooldown = 3.0  # 3 seconds between detections
+people_count = 0
+last_entry_detection_time = 0
+last_exit_detection_time = 0
+last_wifi_check = 0
+wifi_check_interval = 30
+last_influxdb_update = 0
+influxdb_update_interval = 2
 wifi_connected = False
 
-# Thresholds to prevent PIR mis-touch
-CONSECUTIVE_THRESHOLD = 3   # try 2 or 4 to see which works better
-entry_readings = 0
-exit_readings = 0
+# ======= DIAGNOSTIC LOGGING =======
+def log(message, level="INFO"):
+    """Enhanced logging with timestamp"""
+    print(f"[{time.time()}] [{level}] {message}")
+
+# ======= UNIFORM MOTION DETECTION =======
+def detect_motion(sensor, 
+                  motion_threshold=10, 
+                  check_duration=2.0, 
+                  cooldown=3.0, 
+                  last_detection_time=0):
+    """
+    Uniform motion detection for both entry and exit sensors
+    
+    Args:
+    - sensor: PIR sensor Pin object
+    - motion_threshold: Number of high readings needed
+    - check_duration: Total time to check for motion
+    - cooldown: Time between detections
+    - last_detection_time: Time of last detection
+    
+    Returns:
+    - Tuple (motion_detected, current_time)
+    """
+    current_time = time.time()
+    
+    # Check cooldown period
+    if current_time - last_detection_time < cooldown:
+        return False, last_detection_time
+    
+    # Motion detection variables
+    high_readings = 0
+    total_readings = 0
+    start_time = current_time
+    
+    # Motion detection loop
+    while time.time() - start_time < check_duration:
+        current_reading = sensor.value()
+        total_readings += 1
+        
+        if current_reading == 1:
+            high_readings += 1
+            
+            # Check if motion threshold is reached
+            if high_readings >= motion_threshold:
+                log(f"Motion Detected: {high_readings} high readings out of {total_readings}", "MOTION")
+                return True, current_time
+        
+        # Brief pause between checks
+        time.sleep(0.1)
+    
+    # No significant motion detected
+    return False, last_detection_time
 
 # ======= WIFI CONNECTION =======
 def connect_wifi():
-    """Connect to WiFi network"""
+    """Establish WiFi connection"""
     global wifi_connected
-    print("\nConnecting to WiFi...")
+    
+    log("Attempting WiFi connection")
     
     # Free memory before connection attempt
     gc.collect()
@@ -46,143 +103,174 @@ def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
     
-    # Show current connection status
+    # Check current connection status
     if wlan.isconnected():
+        ip = wlan.ifconfig()[0]
+        log(f"Already connected to WiFi: {ip}")
         wifi_connected = True
-        print(f"Already connected: {wlan.ifconfig()[0]}")
         return True
     
     try:
         wlan.connect(WIFI_SSID, WIFI_PASSWORD)
-        for _ in range(10):
+        
+        # Wait for connection with timeout
+        max_wait = 10
+        while max_wait > 0:
             if wlan.isconnected():
-                wifi_connected = True
-                print(f"Connected: {wlan.ifconfig()[0]}")
-                return True
+                break
+            max_wait -= 1
+            print(".", end="")
             time.sleep(1)
+        
+        print("")  # New line after dots
     except Exception as e:
-        print(f"WiFi error: {e}")
-
-    wifi_connected = False
-    return False
+        log(f"WiFi connection error: {e}", "ERROR")
+        wifi_connected = False
+        return False
+    
+    if wlan.isconnected():
+        ip = wlan.ifconfig()[0]
+        log(f"Connected to WiFi: {ip}")
+        wifi_connected = True
+        return True
+    else:
+        log("Failed to connect to WiFi", "ERROR")
+        wifi_connected = False
+        return False
 
 # ======= INFLUXDB INTEGRATION =======
 def send_to_influxdb(count):
-    """Send entry count data to InfluxDB"""
+    """Send people count to InfluxDB"""
     global wifi_connected
     
-    # Check if WiFi is connected
+    # Check WiFi connection
     if not wifi_connected:
-        print("Cannot send to InfluxDB: WiFi not connected")
-        if not connect_wifi():
-            return False
+        log("Cannot send to InfluxDB: WiFi not connected", "WARNING")
+        return False
     
-    # Create InfluxDB line protocol data - using the measurement name that works!
-    # Important: We're using the format that worked in our test
+    # Prepare InfluxDB data
     data = f"{MEASUREMENT_NAME},device=pir value={count}"
     headers = {
         "Authorization": f"Token {INFLUXDB_TOKEN}",
         "Content-Type": "text/plain"
     }
-    # Prepare URL with query parameters
     url = f"{INFLUXDB_URL}/api/v2/write?org={INFLUXDB_ORG}&bucket={INFLUXDB_BUCKET}&precision=ns"
     
     try:
         # Send data to InfluxDB
         response = urequests.post(url, headers=headers, data=data, timeout=5)
         
-        # Check response
-        if response.status_code == 204:  # Success with no content
-            print(f"Data sent: {count}")
+        if response.status_code == 204:
+            log("Data sent to InfluxDB successfully", "INFO")
             response.close()
-            return True           
+            return True
+        else:
+            log(f"InfluxDB error: {response.status_code}", "ERROR")
+            response.close()
+            return False
     except Exception as e:
-        print(f"InfluxDB error: {e}")
-        
-    return False
+        log(f"InfluxDB send error: {e}", "ERROR")
+        return False
 
-# ======= MAIN FUNCTION =======
+# ======= MAIN PROGRAM =======
 def main():
-    """Main program function"""
-    global current_count, last_detection_time
+    """Main people counting program"""
+    global people_count, last_entry_detection_time, last_exit_detection_time
+    global last_wifi_check, last_influxdb_update
     
-    print("\n=== GYM ENTRY/EXIT COUNTER ===")
-    print(f"Monitoring entry on GP{ENTRY_PIR_PIN} and exit on GP{EXIT_PIR_PIN}")
-    print(f"WiFi SSID: {WIFI_SSID}")
-    print(f"Sending data to: {INFLUXDB_URL} as '{MEASUREMENT_NAME}'")
-    print("--------------------------------------")
+    # Initial logging and setup
+    log("=== PEOPLE COUNTER INITIALIZED ===")
+    log(f"Entry Sensor Pin: GP{ENTRY_PIR_PIN}")
+    log(f"Exit Sensor Pin: GP{EXIT_PIR_PIN}")
+    log("Detection Parameters:")
+    log(f"  - Motion Threshold: {MOTION_THRESHOLD}")
+    log(f"  - Detection Cooldown: {DETECTION_COOLDOWN}s")
     
     # Initial WiFi connection
     connect_wifi()
     
-    # Setup PIR sensor
+    # Setup PIR sensors
     try:
-        entry_sensor = Pin(ENTRY_PIR_PIN, Pin.IN, Pin.PULL_DOWN)
+        entry_sensor = Pin(ENTRY_PIR_PIN, Pin.IN)
         exit_sensor = Pin(EXIT_PIR_PIN, Pin.IN, Pin.PULL_DOWN)
-        print(f"PIR sensors initialized on GP{ENTRY_PIR_PIN} (entry) and GP{EXIT_PIR_PIN} (exit)")
+        log("Sensors initialized successfully")
     except Exception as e:
-        print(f"Error initializing PIR sensor: {e}")
+        log(f"Sensor initialization error: {e}", "CRITICAL")
         return
-
-    # Test signal status of the sensor
-    while True:
-        print(f"Entry Sensor: {entry_sensor.value()}, Exit Sensor: {exit_sensor.value()}")
-        time.sleep(0.5)
     
-    '''# Setup LED
+    # Setup onboard LED for feedback
     try:
         led = Pin("LED", Pin.OUT)
-        print("Onboard LED initialized")
-    except Exception:
+        log("Onboard LED initialized")
+    except:
         led = None
-        print("No onboard LED available")
-    '''
+        log("No onboard LED available", "WARNING")
     
-    previous_entry_state = 0
-    previous_exit_state = 0
-    
+    # Main monitoring loop
     try:
         while True:
-            # Get current sensor state
             current_time = time.time()
-            entry_state = entry_sensor.value()
-            exit_state = exit_sensor.value()
-
-            # Processing Entry Detection
-            if entry_state == 1:
-                entry_readings += 1
-            else:
-                entry_readings = 0
-
-            if entry_readings >= CONSECUTIVE_THRESHOLD and previous_entry_state == 0 and (current_time - last_detection_time) > detection_cooldown:
-                current_count += 1
-                last_detection_time = current_time
-                print(f"Person entered! Count: {current_count}")
-                send_to_influxdb(current_count)
-                entry_readings = 0
-
-            # Processing Eixt Detection
-            if exit_state == 1:
-                exit_readings += 1
-            else:
-                exit_readings = 0
-
-            if exit_readings >= CONSECUTIVE_THRESHOLD and previous_exit_state == 0 and (current_time - last_detection_time) > detection_cooldown:
-                current_count = max(0, current_count - 1)
-                last_detection_time = current_time
-                print(f"Person exited! Count: {current_count}")
-                send_to_influxdb(current_count)
-                exit_readings = 0
-                
-            previous_entry_state = entry_state
-            previous_exit_state = exit_state
             
+            # ENTRY DETECTION
+            entry_detected, last_entry_detection_time = detect_motion(
+                entry_sensor, 
+                motion_threshold=MOTION_THRESHOLD,
+                check_duration=MOTION_CHECK_DURATION,
+                cooldown=DETECTION_COOLDOWN,
+                last_detection_time=last_entry_detection_time
+            )
+            
+            if entry_detected:
+                people_count += 1
+                log(f"Person entered! Total count: {people_count}")
+                send_to_influxdb(people_count)
+                
+                # LED feedback
+                if led:
+                    led.value(1)
+                    time.sleep(0.1)
+                    led.value(0)
+            
+            # EXIT DETECTION
+            exit_detected, last_exit_detection_time = detect_motion(
+                exit_sensor, 
+                motion_threshold=MOTION_THRESHOLD,
+                check_duration=MOTION_CHECK_DURATION,
+                cooldown=DETECTION_COOLDOWN,
+                last_detection_time=last_exit_detection_time
+            )
+            
+            if exit_detected:
+                if people_count > 0:
+                    people_count -= 1
+                    log(f"Person exited! Total count: {people_count}")
+                    send_to_influxdb(people_count)
+                    
+                    # LED feedback
+                    if led:
+                        led.value(1)
+                        time.sleep(0.1)
+                        led.value(0)
+                else:
+                    log("Exit detected, count already at 0", "WARNING")
+            
+            # Periodic WiFi check
+            if current_time - last_wifi_check >= wifi_check_interval:
+                last_wifi_check = current_time
+                connect_wifi()
+            
+            # Periodic InfluxDB update
+            if current_time - last_influxdb_update >= influxdb_update_interval:
+                last_influxdb_update = current_time
+                send_to_influxdb(people_count)
+                log(f"Status update - Current count: {people_count}")
+            
+            # Prevent tight looping
             time.sleep(0.1)
     
     except KeyboardInterrupt:
-        print("\nMonitoring stopped")
-        print(f"Final count: {current_count} people")
+        log("\nMonitoring stopped by user")
+        log(f"Final people count: {people_count}")
 
-# Run the program
-if __name__ == "__main__":
-    main()
+# Run the main program
+main()

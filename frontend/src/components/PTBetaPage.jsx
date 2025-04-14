@@ -140,12 +140,30 @@ const PTBetaPage = () => {
     if (!text) return null;
 
     const cleanedText = cleanTextMarkup(text);
-    const sections = cleanedText.split(/\n\n+/);
+    
+    // Skip athlete details section if present
+    let processedText = cleanedText;
+    if (cleanedText.includes("Athlete's Details:") || cleanedText.includes("* Name:") || cleanedText.includes("* Age:")) {
+      // Find the athlete details section and remove it
+      const sections = cleanedText.split(/\n\n+/);
+      const filteredSections = sections.filter(section => 
+        !section.includes("Athlete's Details:") && 
+        !section.match(/\*\s*(Name|Age|Weight|Height|Experience|Any injuries)/)
+      );
+      processedText = filteredSections.join("\n\n");
+    }
+    
+    const sections = processedText.split(/\n\n+/);
     
     return (
       <div className="space-y-6">
         {sections.map((section, sectionIndex) => {
-          if (section.includes("Workout Plan") || section.includes("Personalized") || section.toLowerCase().includes("day")) {
+          // Format headings (workout plan, day titles)
+          if (section.includes("Workout Plan") || 
+              section.includes("Personalized") || 
+              section.toLowerCase().includes("day") ||
+              /^day \d+/i.test(section) ||
+              /^day: /i.test(section)) {
             return (
               <div key={sectionIndex} className="mt-6">
                 <h3 className="text-xl font-bold text-green-800 border-b-2 border-green-500 pb-2 mb-3">
@@ -153,7 +171,100 @@ const PTBetaPage = () => {
                 </h3>
               </div>
             );
-          } else if (section.toLowerCase().includes("warm-up") || section.toLowerCase().includes("cool-down")) {
+          } 
+          // Format warm-up and cool-down sections
+          else if (section.toLowerCase().includes("warm-up") || 
+                  section.toLowerCase().includes("cool-down") ||
+                  section.toLowerCase().includes("warm up") || 
+                  section.toLowerCase().includes("cool down")) {
+            // Check if this section contains table-like data with pipe characters
+            const hasTableFormat = section.includes("|");
+            
+            if (hasTableFormat) {
+              try {
+                const lines = section.split('\n').filter(line => line.trim() !== '');
+                const titleLine = lines[0].trim();
+                
+                // Extract just the section title without the pipe characters
+                const sectionTitle = titleLine.includes("|") 
+                  ? titleLine.split("|")[0].trim() 
+                  : titleLine;
+                
+                // Get potential header cells from the title line
+                const headerCells = titleLine.split("|")
+                  .map(cell => cell.trim())
+                  .filter(cell => cell !== "");
+                
+                // Process the remaining lines to see if they contain proper table format
+                const tableLines = lines.slice(1).filter(line => line.includes("|"));
+                
+                if (tableLines.length > 0) {
+                  // First, handle any bullet points before the table format
+                  const bulletLines = lines.slice(1)
+                    .filter(line => !line.includes("|") && line.trim() !== '' && line.trim().startsWith("•"))
+                    .map(line => line.replace(/^\s*•\s*|\s*•\s*$|^\s*-\s*|\s*-\s*$|^\s*\*\s*|\s*\*\s*$/g, '').trim());
+                  
+                  // Then handle the table-formatted lines
+                  const tableData = tableLines.map(line => {
+                    // Clean up the line and split by pipe
+                    const cleanLine = line.replace(/^\s*•\s*|\s*•\s*$|^\s*-\s*|\s*-\s*$|^\s*\*\s*|\s*\*\s*$/g, '').trim();
+                    return cleanLine.split('|')
+                      .map(cell => cell.trim())
+                      .filter(cell => cell !== '');
+                  });
+                  
+                  return (
+                    <div key={sectionIndex} className="bg-green-50 p-4 rounded-lg shadow-sm mb-4">
+                      <h4 className="font-semibold text-green-700 mb-2">
+                        {sectionTitle}
+                      </h4>
+                      
+                      {/* Display any bullet points if they exist */}
+                      {bulletLines.length > 0 && (
+                        <ul className="list-disc pl-8 mt-2 mb-4 space-y-2">
+                          {bulletLines.map((line, i) => (
+                            <li key={i} className="text-gray-700">{line}</li>
+                          ))}
+                        </ul>
+                      )}
+                      
+                      {/* Display table data with headers from title line */}
+                      <div className="overflow-x-auto mt-3">
+                        <table className="min-w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+                          {headerCells.length > 1 && (
+                            <thead>
+                              <tr className="bg-green-700 text-white">
+                                {headerCells.map((header, i) => (
+                                  <th key={i} className="py-2 px-4 text-left border border-green-600">
+                                    {header}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                          )}
+                          <tbody>
+                            {tableData.map((row, rowIndex) => (
+                              <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
+                                {row.map((cell, cellIndex) => (
+                                  <td key={cellIndex} className="py-2 px-4 border border-gray-300">
+                                    {cell}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                }
+              } catch (error) {
+                console.error("Error formatting warm-up/cool-down section with table:", error);
+                // Continue to fallback rendering if parsing fails
+              }
+            }
+            
+            // Fallback to original list format if there's no table or if parsing failed
             return (
               <div key={sectionIndex} className="bg-green-50 p-4 rounded-lg shadow-sm mb-4">
                 <h4 className="font-semibold text-green-700 mb-2">
@@ -170,25 +281,39 @@ const PTBetaPage = () => {
                 </ul>
               </div>
             );
-          } else if (section.includes("| Exercise |") || section.includes("| Sets |") || 
-                   section.includes("| Reps |") || section.includes("| Duration |")) {
-            
+          }
+          // Format tables (exercise lists)
+          else if (section.includes("|")) {
             try {
-              const headerLine = section.split('\n').find(line => line.includes("| Exercise |") || 
-                                                                 line.includes("| Duration |"));
+              // Look for the header line that contains key exercise table headers
+              const lines = section.split('\n').filter(line => line.trim() !== '');
+              const headerLineIndex = lines.findIndex(line => 
+                line.includes("| Exercise |") || 
+                line.includes("| Sets |") || 
+                line.includes("| Reps |") || 
+                line.includes("| Duration |")
+              );
               
-              if (headerLine) {
+              if (headerLineIndex !== -1) {
+                const headerLine = lines[headerLineIndex];
                 const headers = headerLine.split('|')
                   .map(h => h.trim())
                   .filter(h => h !== '');
                 
-                const tableRows = section.split('\n')
-                  .filter(line => line.includes('|') && line !== headerLine && !line.includes('---'))
+                // Filter out separator lines (---) and empty lines
+                const tableRows = lines
+                  .filter((line, index) => 
+                    line.includes('|') && 
+                    index !== headerLineIndex && 
+                    !line.includes('---') &&
+                    line.trim() !== ''
+                  )
                   .map(line => line.split('|')
                     .map(cell => cell.trim())
                     .filter(cell => cell !== '')
                   );
                 
+                // Create table element
                 return (
                   <div key={sectionIndex} className="my-6 overflow-x-auto">
                     <table className="min-w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
@@ -218,6 +343,7 @@ const PTBetaPage = () => {
               }
             } catch (error) {
               console.error("Error formatting table:", error);
+              // Fallback for tables that can't be parsed properly
               return (
                 <div key={sectionIndex} className="bg-white p-4 rounded-lg border border-gray-200 my-4">
                   <pre className="whitespace-pre-wrap text-sm">{section}</pre>
@@ -225,6 +351,7 @@ const PTBetaPage = () => {
               );
             }
           }
+          // Format regular text sections
           else {
             return (
               <div key={sectionIndex} className="bg-white p-4 rounded-lg shadow-sm mb-4">
@@ -329,6 +456,14 @@ const PTBetaPage = () => {
           <div className="bg-white rounded-xl shadow-xl p-8">
             <h2 className="text-2xl font-bold text-center text-green-800 mb-6">Your Personalized Workout Plan</h2>
             <div className="space-y-4">{formatWorkoutPlan(result)}</div>
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => setResult(null)}
+                className="px-6 py-2 bg-green-700 text-white font-semibold rounded-lg shadow-md hover:bg-green-800"
+              >
+                Create Another Plan
+              </button>
+            </div>
           </div>
         )}
       </div>
