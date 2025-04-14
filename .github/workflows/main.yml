@@ -133,6 +133,7 @@ jobs:
       with:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
+        if_key_exists: replace  # Ensure the key is properly set
         
     - name: Prepare deployment files
       run: |
@@ -140,21 +141,47 @@ jobs:
         cp docker-compose.yml deploy/
         cp mosquitto.conf deploy/
         cp .env.example deploy/.env
+        cp -r Python deploy/  # Also copy Python scripts if they exist
+        
+        # Copy network fix scripts if they exist
+        if [ -f inject-network-fix.sh ]; then
+          cp inject-network-fix.sh deploy/
+          cp network-fix.js deploy/ || true
+        fi
         
     - name: Update .env file
       run: |
         sed -i 's/your_influxdb_token/${{ secrets.INFLUXDB_TOKEN }}/g' deploy/.env
         sed -i 's/your_org/${{ secrets.INFLUXDB_ORG }}/g' deploy/.env
         
+    - name: Fix InfluxDB port in docker-compose.yml
+      run: |
+        # Modify InfluxDB port from 8086 to 8087 to avoid conflicts
+        sed -i 's/8086:8086/8087:8086/' deploy/docker-compose.yml
+        
+    - name: Debug SSH connection
+      run: |
+        echo "Checking SSH connection..."
+        ssh -v ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} "echo 'SSH connection successful'"
+        
     - name: Copy files to server
       run: |
+        # First, ensure the directory exists
+        ssh ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} "mkdir -p ~/iot-gym-system"
+        
+        # Then copy all deployment files
         scp -r deploy/* ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }}:~/iot-gym-system/
         
     - name: Deploy to Azure VM
       run: |
-        ssh ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} << 'EOF'
+        ssh ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} << 'ENDSSH'
           cd ~/iot-gym-system
           docker login -u ${{ secrets.DOCKER_HUB_USERNAME }} -p ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          
+          # Make network fix script executable if it exists
+          if [ -f ./inject-network-fix.sh ]; then
+            chmod +x ./inject-network-fix.sh
+          fi
           
           # Pull the latest images
           docker-compose pull
@@ -165,12 +192,18 @@ jobs:
           # Start containers with new images
           docker-compose up -d
           
+          # Run network fix script if it exists
+          if [ -f ./inject-network-fix.sh ]; then
+            ./inject-network-fix.sh
+            echo "Network fix applied"
+          fi
+          
           # Verify deployment
           docker ps
           
           # Clean up old images
           docker image prune -af
-        EOF
+        ENDSSH
         
     - name: Verify Deployment
       run: |
