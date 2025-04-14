@@ -135,13 +135,18 @@ jobs:
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
         if_key_exists: replace  # Ensure the key is properly set
         
+    - name: Add server to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.AZURE_VM_IP }} >> ~/.ssh/known_hosts
+        
     - name: Prepare deployment files
       run: |
         mkdir -p deploy
         cp docker-compose.yml deploy/
         cp mosquitto.conf deploy/
         cp .env.example deploy/.env
-        cp -r Python deploy/  # Also copy Python scripts if they exist
+        cp -r Python deploy/ || true  # Also copy Python scripts if they exist
         
         # Copy network fix scripts if they exist
         if [ -f inject-network-fix.sh ]; then
@@ -215,24 +220,3 @@ jobs:
         
         # Check if backend API is accessible
         curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.AZURE_VM_IP }}:3000/api/health | grep -q 200 && echo "Backend API deployed successfully" || echo "Backend API deployment issue"
-        
-  notify:
-    name: Notify Team
-    needs: [test, build-and-push, deploy]
-    if: always()
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Send Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-        SLACK_CHANNEL: deployments
-        SLACK_COLOR: ${{ job.status }}
-        SLACK_TITLE: IoT Gym Monitoring Deployment
-        SLACK_MESSAGE: |
-          Deployment Status: ${{ job.status }}
-          Branch: ${{ github.ref }}
-          Commit: ${{ github.sha }}
-          Deployed by: ${{ github.actor }}
-        SLACK_FOOTER: "IoT Pipeline CI/CD"
