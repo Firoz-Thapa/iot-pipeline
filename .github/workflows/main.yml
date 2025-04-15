@@ -164,6 +164,11 @@ jobs:
         # Modify InfluxDB port from 8086 to 8087 to avoid conflicts
         sed -i 's/8086:8086/8087:8086/' deploy/docker-compose.yml
         
+    - name: Fix Frontend port in docker-compose.yml
+      run: |
+        # Modify frontend port from 80:80 to 8000:80 to avoid conflicts with nginx
+        sed -i 's/"80:80"/"8000:80"/' deploy/docker-compose.yml
+        
     - name: Copy files to server
       run: |
         # First, ensure the directory exists and set permissions
@@ -217,7 +222,7 @@ jobs:
         sleep 30
         
         # Check if frontend is accessible
-        curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.AZURE_VM_IP }}/ | grep -q 200 && echo "Frontend deployed successfully" || echo "Frontend deployment issue"
+        curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.AZURE_VM_IP }}:8000/ | grep -q 200 && echo "Frontend deployed successfully" || echo "Frontend deployment issue"
         
         # Check if backend API is accessible
         curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.AZURE_VM_IP }}:3000/api/health | grep -q 200 && echo "Backend API deployed successfully" || echo "Backend API deployment issue"
