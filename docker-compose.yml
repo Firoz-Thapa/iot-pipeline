@@ -4,7 +4,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "3000:5000"  # Changed from "3000:3000" to match your backend port
+      - "3000:5000"  # Maps container port 5000 to host port 3000
     depends_on:
       - influxdb
       - mqtt-broker
@@ -26,9 +26,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "8000:80"  # Changed from "80:80" to avoid conflict with nginx
-    volumes:
-      - ./network-fix.js:/usr/share/nginx/html/network-fix.js  # Added volume for network-fix.js
+      - "8000:80"  # Maps container port 80 to host port 8000
     depends_on:
       - backend
     restart: always
