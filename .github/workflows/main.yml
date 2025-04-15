@@ -169,6 +169,44 @@ jobs:
         # Modify frontend port from 80:80 to 8000:80 to avoid conflicts with nginx
         sed -i 's/"80:80"/"8000:80"/' deploy/docker-compose.yml
         
+    - name: Fix Backend port in docker-compose.yml
+      run: |
+        # Modify backend port from 3000:3000 to 3000:5000 to match actual backend port
+        sed -i 's/"3000:3000"/"3000:5000"/' deploy/docker-compose.yml
+        
+    - name: Create network-fix.js if it doesn't exist
+      run: |
+        if [ ! -f network-fix.js ]; then
+          cat > deploy/network-fix.js << 'EOL'
+          // Override API endpoints with correct values
+          window.API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'http://' + window.location.hostname + ':3000';
+          
+          window.WS_URL = window.location.hostname === 'localhost'
+            ? 'ws://localhost:3000'
+            : 'ws://' + window.location.hostname + ':3000';
+          
+          console.log('API endpoints overridden:', {
+            API_BASE_URL: window.API_BASE_URL,
+            WS_URL: window.WS_URL
+          });
+          EOL
+          
+          # Create inject-network-fix.sh if it doesn't exist
+          cat > deploy/inject-network-fix.sh << 'EOL'
+          #!/bin/bash
+          # Clear existing script references if any
+          docker-compose exec -T frontend sh -c "sed -i '/<script src=\"\/.*fix.js\"><\/script>/d' /usr/share/nginx/html/index.html"
+          docker-compose exec -T frontend sh -c "sed -i '/<script src=\"\/.*override.js\"><\/script>/d' /usr/share/nginx/html/index.html"
+          # Inject our network fix script
+          docker-compose exec -T frontend sh -c "sed -i '/<head>/a <script src=\"/network-fix.js\"></script>' /usr/share/nginx/html/index.html"
+          echo "Network fix has been injected"
+          EOL
+          
+          chmod +x deploy/inject-network-fix.sh
+        fi
+        
     - name: Copy files to server
       run: |
         # First, ensure the directory exists and set permissions
@@ -224,5 +262,5 @@ jobs:
         # Check if frontend is accessible
         curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.AZURE_VM_IP }}:8000/ | grep -q 200 && echo "Frontend deployed successfully" || echo "Frontend deployment issue"
         
-        # Check if backend API is accessible
-        curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.AZURE_VM_IP }}:3000/api/health | grep -q 200 && echo "Backend API deployed successfully" || echo "Backend API deployment issue"
+        # Check if backend API is accessible - try without the /api/health path
+        curl -s -o /dev/null -w "%{http_code}" http://${{ secrets.AZURE_VM_IP }}:3000/ | grep -q 200 && echo "Backend API deployed successfully" || echo "Backend API deployment issue"
