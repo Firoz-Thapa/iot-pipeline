@@ -166,11 +166,17 @@ jobs:
         
     - name: Copy files to server
       run: |
-        # First, ensure the directory exists
-        ssh ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} "mkdir -p ~/iot-gym-system"
+        # First, ensure the directory exists and set permissions
+        ssh ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} "mkdir -p ~/iot-gym-system && chmod 775 ~/iot-gym-system"
+        
+        # Check if mosquitto.conf exists and fix permissions if needed
+        ssh ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} "if [ -f ~/iot-gym-system/mosquitto.conf ]; then sudo chown ${{ secrets.AZURE_VM_USERNAME }}:${{ secrets.AZURE_VM_USERNAME }} ~/iot-gym-system/mosquitto.conf; fi"
         
         # Then copy all deployment files
         scp -r deploy/* ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }}:~/iot-gym-system/
+        
+        # Make sure permissions are correct after copying
+        ssh ${{ secrets.AZURE_VM_USERNAME }}@${{ secrets.AZURE_VM_IP }} "sudo chown -R ${{ secrets.AZURE_VM_USERNAME }}:${{ secrets.AZURE_VM_USERNAME }} ~/iot-gym-system/"
         
     - name: Deploy to Azure VM
       run: |
