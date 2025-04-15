@@ -174,38 +174,32 @@ jobs:
         # Modify backend port from 3000:3000 to 3000:5000 to match actual backend port
         sed -i 's/"3000:3000"/"3000:5000"/' deploy/docker-compose.yml
         
-    - name: Create network-fix.js if it doesn't exist
+    - name: Create network-fix.js
       run: |
-        if [ ! -f network-fix.js ]; then
-          cat > deploy/network-fix.js << 'EOL'
-          // Override API endpoints with correct values
-          window.API_BASE_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000' 
-            : 'http://' + window.location.hostname + ':3000';
-          
-          window.WS_URL = window.location.hostname === 'localhost'
-            ? 'ws://localhost:3000'
-            : 'ws://' + window.location.hostname + ':3000';
-          
-          console.log('API endpoints overridden:', {
-            API_BASE_URL: window.API_BASE_URL,
-            WS_URL: window.WS_URL
-          });
-          EOL
-          
-          # Create inject-network-fix.sh if it doesn't exist
-          cat > deploy/inject-network-fix.sh << 'EOL'
-          #!/bin/bash
-          # Clear existing script references if any
-          docker-compose exec -T frontend sh -c "sed -i '/<script src=\"\/.*fix.js\"><\/script>/d' /usr/share/nginx/html/index.html"
-          docker-compose exec -T frontend sh -c "sed -i '/<script src=\"\/.*override.js\"><\/script>/d' /usr/share/nginx/html/index.html"
-          # Inject our network fix script
-          docker-compose exec -T frontend sh -c "sed -i '/<head>/a <script src=\"/network-fix.js\"></script>' /usr/share/nginx/html/index.html"
-          echo "Network fix has been injected"
-          EOL
-          
-          chmod +x deploy/inject-network-fix.sh
-        fi
+        echo '// Override API endpoints with correct values
+        window.API_BASE_URL = window.location.hostname === "localhost" 
+          ? "http://localhost:3000" 
+          : "http://" + window.location.hostname + ":3000";
+        
+        window.WS_URL = window.location.hostname === "localhost"
+          ? "ws://localhost:3000"
+          : "ws://" + window.location.hostname + ":3000";
+        
+        console.log("API endpoints overridden:", {
+          API_BASE_URL: window.API_BASE_URL,
+          WS_URL: window.WS_URL
+        });' > deploy/network-fix.js
+        
+    - name: Create inject-network-fix.sh
+      run: |
+        echo '#!/bin/bash
+        # Clear existing script references if any
+        docker-compose exec -T frontend sh -c "sed -i \"/<script src=\\\"\\/.*fix.js\\\"><\\/script>/d\" /usr/share/nginx/html/index.html"
+        docker-compose exec -T frontend sh -c "sed -i \"/<script src=\\\"\\/.*override.js\\\"><\\/script>/d\" /usr/share/nginx/html/index.html"
+        # Inject our network fix script
+        docker-compose exec -T frontend sh -c "sed -i \"/<head>/a <script src=\\\"/network-fix.js\\\"></script>\" /usr/share/nginx/html/index.html"
+        echo "Network fix has been injected"' > deploy/inject-network-fix.sh
+        chmod +x deploy/inject-network-fix.sh
         
     - name: Copy files to server
       run: |
