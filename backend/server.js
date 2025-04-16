@@ -21,10 +21,10 @@ app.use(cors({
 app.use(express.static(path.join(__dirname, 'public')));
 
 // InfluxDB configuration
-const url = process.env.INFLUX_URL || 'http://localhost:8086';
-const token = process.env.INFLUX_TOKEN || 'XFym-O4pGm1v4zmRkAlyW-tr1m_HJpivBYxoiOo_YBw5hl9uafe-TxJIrnN8CbFg3ITASDtklyxmbUQUn5u95Q==';
-const org = process.env.INFLUX_ORG || 'LAB';
-const bucket = process.env.INFLUX_BUCKET || 'iot_monitoring';
+const url = process.env.INFLUX_URL ;
+const token = process.env.INFLUX_TOKEN;
+const org = process.env.INFLUX_ORG ;
+const bucket = process.env.INFLUX_BUCKET ;
 
 // Gemini API configuration
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
@@ -32,7 +32,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
 
 // Create InfluxDB client
-const influxClient = new InfluxDB({ url, token });
+const influxClient = new InfluxDB({ url, token, timeout: 30000 });
 const queryApi = influxClient.getQueryApi(org);
 const writeApi = influxClient.getWriteApi(org, bucket, 'ns');
 
