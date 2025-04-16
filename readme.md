@@ -167,6 +167,48 @@ sudo ufw allow 9001/tcp  # MQTT WebSockets
 
 ---
 
+## Troubleshooting Guide
+
+### 1. Connection Issues with InfluxDB
+**Issue**: Backend unable to connect to InfluxDB with "ECONNREFUSED" errors
+**Solution**:
+* Verify InfluxDB container is running with `docker-compose ps influxdb`
+* Check if the bucket name in backend .env matches the one in docker-compose.yml
+* Ensure the INFLUX_TOKEN is valid and not expired
+
+### 2. Frontend API Connection Failures
+**Issue**: Frontend shows "Failed to load data" error messages
+**Solution**:
+* Check browser console for specific error messages
+* Verify API URLs are correctly using environment variables instead of hardcoded localhost
+* Confirm backend services are running and accessible
+
+### 3. Sensor Data Not Being Recorded
+**Issue**: PIR sensors detect motion but data isn't showing in the dashboard
+**Solution**:
+* Check the MQTT connection status
+* Verify sensor code is correctly publishing to the right MQTT topic
+* Ensure the backend is subscribed to the corresponding topics
+
+## User Guide
+
+### Dashboard Navigation
+
+1. **Now Page**: Shows real-time occupancy data
+  * The large number indicates total people currently in the gym
+  * Each zone card shows current occupancy and capacity
+  * Red indicator shows live data status
+
+2. **Week Page**: Displays historical data
+  * Bar chart shows occupancy trends by day and zone
+  * Use this to identify patterns in gym usage throughout the week
+
+3. **PT Beta Page**: AI-powered workout generation
+  * Select fitness goals, level, and frequency
+  * System generates a personalized workout plan using AI
+
+---
+
 ## Project Timeline
 
 | **Phase**   | **Tasks**                          | **Duration** |
@@ -195,9 +237,10 @@ sudo ufw allow 9001/tcp  # MQTT WebSockets
 
 # Pictures
 
-![WhatsApp Image 2025-03-25 at 10 41 31 (2)](https://github.com/user-attachments/assets/3a27974c-e769-42bf-9d18-77d8129bc3d8)
-![WhatsApp Image 2025-03-25 at 10 41 31 (1)](https://github.com/user-attachments/assets/de56a2de-5879-43dd-853d-20bf32f35e04)
-![WhatsApp Image 2025-03-25 at 10 41 31](https://github.com/user-attachments/assets/7081abff-6c83-4a84-a818-3605649460e7)
+![Screenshot 2025-04-16 183958](https://github.com/user-attachments/assets/43e58302-afad-4645-a356-bd1d0a6d0b2a)
+![Screenshot 2025-04-16 184009](https://github.com/user-attachments/assets/2a148f21-7060-4475-a332-636add35c73b)
+![Screenshot 2025-04-16 184035](https://github.com/user-attachments/assets/c8c692f1-d8ea-4a32-97ef-0888c780b8b9)
+
 
 # Link
 
