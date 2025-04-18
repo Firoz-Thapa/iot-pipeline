@@ -28,7 +28,6 @@ const bucket = process.env.INFLUX_BUCKET ;
 
 // Gemini API configuration
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-// Updated to v1 instead of v1beta and using gemini-1.5-flash instead of gemini-pro
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
 
 // Create InfluxDB client
@@ -41,10 +40,10 @@ async function testInfluxConnection() {
   try {
     const fluxQuery = `from(bucket: "${bucket}") |> range(start: -1m) |> limit(n: 1)`;
     const result = await queryApi.collectRows(fluxQuery);
-    console.log('✅ InfluxDB connection successful');
+    console.log('InfluxDB connection successful');
     return true;
   } catch (error) {
-    console.error('❌ InfluxDB connection failed:', error.message);
+    console.error('InfluxDB connection failed:', error.message);
     return false;
   }
 }
@@ -478,8 +477,8 @@ const PORT = process.env.PORT || 5000;
 server.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   await testInfluxConnection();
-  console.log('✅ Workout generator endpoint available at http://localhost:' + PORT + '/generate-workout');
-  console.log('✅ Gym entries API available at http://localhost:' + PORT + '/api/gym-entries');
+  console.log('Workout generator endpoint available at http://localhost:' + PORT + '/generate-workout');
+  console.log('Gym entries API available at http://localhost:' + PORT + '/api/gym-entries');
 });
 
 // Error handling for uncaught exceptions

@@ -5,17 +5,17 @@ from machine import Pin
 import gc
 
 # WiFi setup
-WIFI_SSID = "Firoz thapa"
-WIFI_PASSWORD = "Firoz123"
+WIFI_SSID = "Your_SSID"  # Replace with your WiFi SSID
+WIFI_PASSWORD = "Your_Password"  # Replace with your WiFi password
 
 # PIR sensor pins
 ENTRY_PIR_PIN = 22  # GP22 where the ENTRY sensor is connected
 EXIT_PIR_PIN = 21   # GP21 where the EXIT sensor is connected
 
-INFLUXDB_URL = "http://135.236.212.218:8086"
-INFLUXDB_BUCKET = "iot-data"
-INFLUXDB_ORG = "LAB"
-INFLUXDB_TOKEN = "XFym-O4pGm1v4zmRkAlyW-tr1m_HJpivBYxoiOo_YBw5hl9uafe-TxJIrnN8CbFg3ITASDtklyxmbUQUn5u95Q=="
+INFLUXDB_URL = "http://your-influxdb-url:8086"  # Replace with your InfluxDB URL
+INFLUXDB_BUCKET = "your-bucket-name"  # Replace with your InfluxDB bucket name
+INFLUXDB_ORG = " your-org-name"  # Replace with your InfluxDB organization name
+INFLUXDB_TOKEN = "Your_InfluxDB_Token"  # Replace with your InfluxDB token
 MEASUREMENT_NAME = "test_measurement"
 
 MOTION_THRESHOLD = 10 
